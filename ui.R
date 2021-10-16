@@ -10,7 +10,10 @@
 library(shiny)
 library(shinythemes)
 library(shinydashboard)
+library(tidyverse)
 library(plotly)
+library(highcharter)
+library(DT)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -39,30 +42,42 @@ shinyUI(dashboardPage(
     dashboardBody(
         tabsetPanel(
             tabPanel("Whole Data Analysis",
+                     
+                     # fluidRow(
+                     #     box(dataTableOutput("table")),
+                     # ),
+                     #     hr(),
+                     #     hr(),
+                         
+                         ###### volcanoplot using ploty TEST   
+                         
+                          #titlePanel("Volcano Plotly"),
+                         fluidRow(
+                           column( #column1
+                              width = 2,
+                              sliderInput(inputId = "axe_x",
+                                       label = "limite log2 fold change (axe x)",
+                                       min = 0,
+                                       max = 7,
+                                       value = 3),
+                              sliderInput(inputId = "axe_y",
+                                          label = "limite -log10 p value (axe y)",
+                                          min = 0,
+                                          max = 60,
+                                          value = 6),
+                              
+                              numericInput("color_pvalue", label = h3("pvalue limite selection"), value = 0.05, step = 0.01),
+                           ), #fin column1
+                              
+                           column( #column2
+                             width = 10,
+                             plotlyOutput("volcanoPlot_plotly", height = "500px",width = "100%")
+                           )#fin column2
+                         ),#fluidRow(
+                     
                      fluidRow(
                          box(dataTableOutput("table")),
-                     
-                         headerPanel('Example'),
-                         mainPanel(
-                             plotlyOutput('plot')
-                         ),
-                      
-                         hr(),
-                         hr(),
-                         #test volcanoplot 10 octobre  
-                         titlePanel("Volcano Plot using ggplot "),
-                         fluidRow(
-                           column(
-                             width = 6,
-                             plotOutput("volcanoPlot", click = "volcanoPlotSelection", height = "500px")
-                           )
-                         ),
-                         
-                         hr(),
-                         hr(),
-                         hr()
-                         
-                     )#fluidRow(
+                     )
                      
             ), # tabPanel("Whole Data Analysis"
             
