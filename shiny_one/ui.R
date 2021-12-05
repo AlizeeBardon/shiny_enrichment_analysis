@@ -10,6 +10,7 @@
 library(shiny)
 library(shinythemes)
 library(shinydashboard)
+library(shinyWidgets)
 library(tidyverse)
 library(plotly)
 library(highcharter)
@@ -100,15 +101,8 @@ shinyUI(dashboardPage(
   # BODY --------------------------------------------------------------------
   
   
-  
-  
-  
-  
-
-
-  
-  
   dashboardBody(
+
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "css_shinyapp_first_test.css")
     ),
@@ -124,46 +118,44 @@ shinyUI(dashboardPage(
     
     tabsetPanel(
       tabPanel("Whole Data Analysis",
+            
+               br(),
+               br(),
                
-               br(), br(),
-               
-               div(
-               box(title = "Parametres", status = "warning", solidHeader = TRUE, width = 4,
-                   sliderInput(inputId = "axe_x",
-                               label = "log2 fold change (axe x)",
+               box(title = "Parameters", status = "warning", solidHeader = TRUE, width = 12,
+                   sliderInput(inputId = "pvalue",
+                               label = "pvalue",
                                min = 0,
-                               max = 7,
-                               value = 3),
-                   br(),
-                   sliderInput(inputId = "axe_y",
-                               label = "-log10(p value) (axe y)",
-                               min = 0,
-                               max = 60,
-                               value = 6),
-                   br(),
-                   numericInput("color_pvalue", label = h3("pvalue limite selection"), value = 0.05, step = 0.01),
-                 
+                               max = 0.25,
+                               value = 0.05),
                ), # fin box
                
                
-               tabBox(
-                 id = "tabset1", height = "450px", width = 8,
-                 tabPanel("Tab1", 
-                          "First tab content",
-                          plotlyOutput("volcanoPlot_plotly", height = 250)
-                          ),
-                 tabPanel("Tab2", 
-                          "Tab content 2"
-                          )
-               ),# fin tabbox
-               ), #fin div
+               box(title = "Volcano Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                    plotlyOutput("volcanoPlot_plotly", height = "450px")
+               ), #fin box
                
-               fluidRow(br()),
+               box(title = "MA Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                   plotlyOutput("MAPlot_plotly",  height = "450px")
+               ), #fin box
                
-               div(
-               box (dataTableOutput("table"), 
-                    width = 6)
-               ) #fin div
+  
+
+               
+               br(),
+               br(),               br(),
+               br(),               br(),
+               br(),               br(),
+               br(),
+           
+                 
+ 
+               box (dataTableOutput("Table_subset_data_selected"), 
+                    width = 12),
+               
+               
+            
+             
       ), # tabPanel("Whole Data Analysis"
       
       
