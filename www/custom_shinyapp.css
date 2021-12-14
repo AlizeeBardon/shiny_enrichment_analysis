@@ -1,0 +1,68 @@
+/* header title font */
+.main-header .logo {
+  font-family: "Georgia", Times, "Times New Roman", serif;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+
+/* background color of header (logo part) */
+.skin-purple .main-header .logo:hover {
+	background-color: pink ;
+}
+
+/* */
+
+.nav-tabs {
+  display: flex ;
+  justify-content: space-between;
+  height: 75px ;  
+}
+
+.tabbable > .nav > li > a {
+	background-color: #605ca8;  
+	color:white ;
+	height: 50px ;
+	width : 20em; 
+	font-size: 15px;
+	text-align: center;
+	border-radius: 10px;
+	}
+	
+
+.tabbable > .nav > li[class=active]    > a {
+	background-color: #CFA0E9; 
+	color:black ;
+	font-weight: bold;
+	font-size: 17px;
+	text-align: center;
+
+ 
+	border-radius: 10px;
+	border: 6px solid #605ca8;
+
+/*
+
+
+.tabbable > .nav > li > a {
+	background-color: #9370DB;  
+	color:black ;
+	height: 50px ;
+	}
+
+
+
+.tabbable > .nav > li[class=active]    > a {
+	 background-color: #7B68EE; 
+	 color:white;
+	 width : 200 px ;
+	 font-size: 15px}
+*/
+
+
+
+
+
+
+
+
