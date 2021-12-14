@@ -30,3 +30,14 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 BiocManager::install("clusterProfiler")
 ```
+
+à lire :
+
+https://alexslemonade.github.io/refinebio-examples/03-rnaseq/pathway-analysis_rnaseq_01_ora.html
+https://alexslemonade.github.io/refinebio-examples/03-rnaseq/pathway-analysis_rnaseq_02_gsea.html
+https://yulab-smu.top/biomedical-knowledge-mining-book/index.html
+📖 Introduction | Biomedical Knowledge Mining using GOSemSim and clu...
+Biomedical knowledge mining using GOSemSim and clusterProfiler.
+
+https://www.gsea-msigdb.org/gsea/doc/GSEAUserGuideFrame.html
+http://www.jybaudot.fr/Inferentielle/kolmogorov.html
