@@ -30,11 +30,11 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("clusterProfiler")
 ```
 ***P value ajustement ****
+
 p.adjust(p, method = p.adjust.methods, n = length(p))
 p.adjust.methods
-# c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
-#   "fdr", "none")
-
+c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
+"fdr", "none")
 
 à lire :
 
