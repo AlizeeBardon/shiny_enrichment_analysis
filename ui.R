@@ -7,6 +7,25 @@
 #    http://shiny.rstudio.com/
 #
 
+#Install biomaRT package :
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("biomaRt")
+
+#Install pathview package :
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("pathview")
+
+# Install clusterProfiler package :
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("clusterProfiler")
+
+
 library(shiny)
 library(shinythemes)
 library(shinydashboard)
@@ -104,17 +123,8 @@ shinyUI(dashboardPage(
   dashboardBody(
 
     tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "css_shinyapp_first_test.css")
+      tags$link(rel = "stylesheet", type = "text/css", href = "custom_shinyapp.css")
     ),
-    
-    tags$style(
-    
-      HTML("
-    .tabbable > .nav > li > a                  {background-color: transparent;  color:black; font-size: 12px}
-    .tabbable > .nav > li[class=active]    > a {background-color: purple; color:white; font-size: 12px}
-      ")#html
-      
-    ), # tags$style
     
     tabsetPanel(
       tabPanel("Whole Data Analysis",
