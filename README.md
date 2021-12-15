@@ -31,11 +31,12 @@ BiocManager::install("clusterProfiler")
 ```
 ***P value ajustement ****
 
+```
 p.adjust(p, method = p.adjust.methods, n = length(p))
 p.adjust.methods
 c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
 "fdr", "none")
-
+```
 à lire :
 
 https://alexslemonade.github.io/refinebio-examples/03-rnaseq/pathway-analysis_rnaseq_01_ora.html
