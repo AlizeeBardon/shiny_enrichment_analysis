@@ -36,7 +36,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 BiocManager::install("org.Dr.eg.db")
 ```
-***P value ajustement ****
+**Pvalue ajustement :**
 
 ```
 p.adjust(p, method = p.adjust.methods, n = length(p))
