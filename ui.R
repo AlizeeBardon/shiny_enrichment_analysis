@@ -110,12 +110,32 @@ shinyUI(dashboardPage(
                             "text/comma-separated-values,text/plain",
                             ".csv")
                 ),
-                textInput("text", ""),
-                actionButton("printtext","RUN"),
-                menuItem("Data", tabName = "data", icon = icon("table"),startExpanded = TRUE,
-                         menuSubItem("CSV file", tabName = "data1"),
-                         menuSubItem("TSV file", tabName = "data")
-                         
+                                selectInput(
+                  "espece",
+                  label = h4("choose organism:"),
+                  choices = list(
+                    "Anophele" = "Anophele",
+                    "Arabidopsis" = "Arabidopsis",
+                    "Bovine" = "Bovine",
+                    "Worm" = "Worm",
+                    "Canine" = "Canine", 
+                    "Fly" = "Fly",
+                    "ZebraFish" = "ZebraFish",
+                    "Ecoli K12" = "Ecoli K12",
+                    "Ecoli Sakai" = "Ecoli Sakai",
+                    "Chicken" = "Chicken",
+                    "Human" = "Human",
+                    "Mouse" = "Mouse",
+                    "Rhesus" = "Rhesus",
+                    "Myxococcus xanthus DK 1622" = "Myxococcus xanthus DK 1622",
+                    "Malaria" = "Malaria" ,
+                    "Chimpanzee" = "Chimpanzee",
+                    "Rat" =  "Rat",
+                    "Yeast" = "Yeast",
+                    "Pig" = "Pig",
+                    "Xenopus" = "Xenopus"
+                  ),
+                  selected = "Human"
                 )
     )
   ), # fin dashboardSidebar
