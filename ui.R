@@ -25,6 +25,10 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 BiocManager::install("clusterProfiler")
 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("org.Dr.eg.db")
 
 library(shiny)
 library(shinythemes)
@@ -34,7 +38,7 @@ library(tidyverse)
 library(plotly)
 library(highcharter)
 library(DT)
-
+library(org.Dr.eg.db) 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
   skin = "purple",
