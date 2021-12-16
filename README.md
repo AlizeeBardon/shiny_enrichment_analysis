@@ -29,6 +29,13 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 BiocManager::install("clusterProfiler")
 ```
+**Install org.Dr.eg.db package :**
+```
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("org.Dr.eg.db")
+```
 ***P value ajustement ****
 
 ```
