@@ -15,10 +15,6 @@
 
 
 organism = "org.Mm.eg.db" 
-#BiocManager::install(organism, character.only = TRUE) 
-library(organism, character.only = TRUE) 
-library(org.Mm.eg.db)
-columns(org.Mm.eg.db)
 
 library(clusterProfiler) 
 library(biomaRt)
@@ -158,9 +154,7 @@ re <- reactive({
 
     annot <- eventReactive(input$Run_Annotation, {
         data <- re() 
-        head(data)
         gene_list = data$GeneName                 
-        head(gene_list)
         organism = input$espece
         generef = bitr(gene_list, fromType = "SYMBOL", toType= "GO", OrgDb=organism)
     })

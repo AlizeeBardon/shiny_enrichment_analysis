@@ -17,6 +17,7 @@ library(plotly)
 library(highcharter)
 library(DT)
 
+
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
   skin = "purple",
@@ -88,7 +89,7 @@ shinyUI(dashboardPage(
                             "text/comma-separated-values,text/plain",
                             ".csv")
                 ),
-             
+
                 menuItem(
                   "need any help to import your data ?",
                   h5("please choose a .csv document"),
@@ -130,6 +131,35 @@ shinyUI(dashboardPage(
                   h5("Make sure you select the ", br(), "species that matches  your dataset"),
                   h5("If it is not in the list, we advise", br(), " to choose the most phylogenetically ", br(), "related species")
 
+                ), #menuItem
+
+                                
+                selectInput(
+                  "espece",
+                  label = h4("choose organism:"),
+                  choices = list(
+                    "Anophele" = "Anophele",
+                    "Arabidopsis" = "Arabidopsis",
+                    "Bovine" = "Bovine",
+                    "Worm" = "Worm",
+                    "Canine" = "Canine", 
+                    "Fly" = "Fly",
+                    "ZebraFish" = "ZebraFish",
+                    "Ecoli K12" = "Ecoli K12",
+                    "Ecoli Sakai" = "Ecoli Sakai",
+                    "Chicken" = "Chicken",
+                    "Human" = "Human",
+                    "Mouse" = "Mouse",
+                    "Rhesus" = "Rhesus",
+                    "Myxococcus xanthus DK 1622" = "Myxococcus xanthus DK 1622",
+                    "Malaria" = "Malaria" ,
+                    "Chimpanzee" = "Chimpanzee",
+                    "Rat" =  "Rat",
+                    "Yeast" = "Yeast",
+                    "Pig" = "Pig",
+                    "Xenopus" = "Xenopus"
+                  ),
+                  selected = "Human"
                 )
     )
   ), # fin dashboardSidebar
@@ -201,7 +231,7 @@ shinyUI(dashboardPage(
                         )
                ) #fluidrow
  
-      ), # tabPanel("GO Term Enrichment"
+      ), # tabPanel("GO Term Enrichm:qent"
       
       
       tabPanel("Pathway Enrichment", 
