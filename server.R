@@ -7,6 +7,22 @@
 #    http://shiny.rstudio.com/
 #
 
+
+# if (!requireNamespace("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# 
+# BiocManager::install("biomaRt", "pathview", "clusterProfiler")
+
+
+organism = "org.Mm.eg.db" 
+#BiocManager::install(organism, character.only = TRUE) 
+library(organism, character.only = TRUE) 
+library(org.Mm.eg.db)
+columns(org.Mm.eg.db)
+
+library(clusterProfiler) 
+library(biomaRt)
+library(pathview)
 library(shiny)
 library(shinythemes)
 library(shinydashboard)
@@ -25,7 +41,7 @@ shinyServer(function(input, output) {
 ###### input data    
 #########################################################################
   
-    re <- reactive({
+re <- reactive({
       file <- input$file1
       ext <- tools::file_ext(file$datapath)
       req(file)
@@ -37,9 +53,14 @@ shinyServer(function(input, output) {
           )
         })
 
-######################################################################### 
-###### volcanoplot using ploty    
-#########################################################################
+
+    # BODY --------------------------------------------------------------------
+    
+        # BODY: tabPanel : whole Data Analysis --------------------------------
+
+
+# Volcanoplot 
+
 
     output$volcanoPlot_plotly <- renderPlotly({
 
@@ -69,9 +90,8 @@ shinyServer(function(input, output) {
         
       })
     
-#########################################################################
-###### MA plot using ploty TEST   
-#########################################################################
+
+# MA plot    
 
     output$MAPlot_plotly <- renderPlotly({
       
@@ -100,10 +120,9 @@ shinyServer(function(input, output) {
       
     })
     
-#########################################################################
-### TABLEAU INTERACTIF
-######################################################################### 
-    
+
+# Interactive Table
+
     output$Table_subset_data_selected <- renderDataTable({ 
       D <- re() %>%  
         mutate(
@@ -134,6 +153,22 @@ shinyServer(function(input, output) {
         selectRows(row_clicked)
       
     }) # fin observe
+    
+# Annotation Table
+
+    annot <- eventReactive(input$Run_Annotation, {
+        data <- re() 
+        head(data)
+        gene_list = data$GeneName                 
+        head(gene_list)
+        organism = input$espece
+        generef = bitr(gene_list, fromType = "SYMBOL", toType= "GO", OrgDb=organism)
+    })
+
+    output$annotation <- renderDataTable({
+      D <- annot()
+      DT::datatable(D)
+    })#fin renderDataTable
     
     
     } # end function(input, output) {
