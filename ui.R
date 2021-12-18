@@ -7,24 +7,6 @@
 #    http://shiny.rstudio.com/
 #
 
-#Install biomaRT package :
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("biomaRt")
-
-#Install pathview package :
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("pathview")
-
-# Install clusterProfiler package :
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("clusterProfiler")
-
 
 library(shiny)
 library(shinythemes)
@@ -34,6 +16,7 @@ library(tidyverse)
 library(plotly)
 library(highcharter)
 library(DT)
+
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -86,7 +69,7 @@ shinyUI(dashboardPage(
       a(
         strong("ABOUT US"),
         height = 40,
-        href = "https://github.com/ceefluz/radar/blob/master/README.md",
+        href = "https://github.com/AlizeeBardon/shiny_enrichment_analysis",
         title = "",
         target = "_blank"
       ),
@@ -106,12 +89,47 @@ shinyUI(dashboardPage(
                             "text/comma-separated-values,text/plain",
                             ".csv")
                 ),
-                textInput("text", ""),
-                actionButton("printtext","RUN"),
-                menuItem("Data", tabName = "data", icon = icon("table"),startExpanded = TRUE,
-                         menuSubItem("CSV file", tabName = "data1"),
-                         menuSubItem("TSV file", tabName = "data")
-                         
+                
+                menuItem(
+                  "need any help to import your data ?",
+                  h5("please choose a .csv document"),
+                  h5("the document must be composed ", br(), " of 6 columns(GeneName, ID, baseMean, ", br(), " log2FC, pval, padj)")
+                ),
+                
+                selectInput( "espece",
+                  label = h4("choose organism:"),
+                  choices = list(
+                                  "Human (org.Hs.eg.db)"="org.Hs.eg.db",
+                                  "Mouse (org.Mm.eg.db)"="org.Mm.eg.db",
+                                  "Rat (org.Rn.eg.db)"="org.Rn.eg.db",
+                                  "Yeast (org.Sc.sgd.db)"="org.Sc.sgd.db",
+                                  "Fly (org.Dm.eg.db)"="org.Dm.eg.db",
+                                  "Arabidopsis (org.At.tair.db)"="org.At.tair.db",
+                                  "Zebrafish (org.Dr.eg.db)"="org.Dr.eg.db",
+                                  "Bovine (org.Bt.eg.db)"="org.Bt.eg.db",
+                                  "Worm (org.Ce.eg.db)"="org.Ce.eg.db",
+                                  "Chicken (org.Gg.eg.db)"="org.Gg.eg.db",
+                                  "Canine (org.Cf.eg.db)"="org.Cf.eg.db",
+                                  "Pig (org.Ss.eg.db)"="org.Ss.eg.db",
+                                  "Rhesus (org.Mmu.eg.db)"="org.Mmu.eg.db",
+                                  "E coli strain K12 (org.EcK12.eg.db)"="org.EcK12.eg.db",
+                                  "Xenopus (org.Xl.eg.db)"="org.Xl.eg.db",
+                                  "Chimp (org.Pt.eg.db)"="org.Pt.eg.db",
+                                  "Anopheles (org.Ag.eg.db)"="org.Ag.eg.db",
+                                  "Malaria (org.Pf.plasmo.db)"="org.Pf.plasmo.db",
+                                  "E coli strain Sakai (org.EcSakai.eg.db)"="org.EcSakai.eg.db"
+                                ),
+                  #selected = "Human"
+                ) , 
+                
+                actionButton("Run_Annotation","Run Annotation"),
+
+                br(),
+                
+                menuItem(
+                  "Annotation Information ?",
+                  h5("Make sure you select the ", br(), "species that matches  your dataset"),
+                  h5("If it is not in the list, we advise", br(), " to choose the most phylogenetically ", br(), "related species")
                 )
     )
   ), # fin dashboardSidebar
@@ -126,10 +144,18 @@ shinyUI(dashboardPage(
       tags$link(rel = "stylesheet", type = "text/css", href = "custom_shinyapp.css")
     ),
     
+    
+    
     tabsetPanel(
+      
+      # BODY: tabPanel : whole Data Analysis --------------------------------
+      
       tabPanel("Whole Data Analysis",
             
                br(),
+
+               h1("whole Data Analysis"), 
+               
                br(),
                
                box(title = "Parameters", status = "warning", solidHeader = TRUE, width = 12,
@@ -149,30 +175,20 @@ shinyUI(dashboardPage(
                    plotlyOutput("MAPlot_plotly",  height = "450px")
                ), #fin box
                
-  
-
-               
-               br(),
-               br(),               br(),
-               br(),               br(),
-               br(),               br(),
-               br(),
-           
-                 
  
                box (dataTableOutput("Table_subset_data_selected"), 
                     width = 12),
                
-               
+               box (dataTableOutput("annotation"), 
+                    width = 12),
             
              
       ), # tabPanel("Whole Data Analysis"
       
       
+      # BODY: tabPanel : GO Term Enrichment --------------------------------
+      
       tabPanel("GO Term Enrichment", 
-               
-               
-               
                
                "text",
                fluidRow(
