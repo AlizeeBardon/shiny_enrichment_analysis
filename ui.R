@@ -88,7 +88,7 @@ shinyUI(dashboardPage(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
                             ".csv")
-                ),
+                )
 
                 menuItem(
                   "need any help to import your data ?",
@@ -119,6 +119,8 @@ shinyUI(dashboardPage(
                                   "Malaria (org.Pf.plasmo.db)"="org.Pf.plasmo.db",
                                   "E coli strain Sakai (org.EcSakai.eg.db)"="org.EcSakai.eg.db"
                                 ),
+
+                 
                 ) , 
                 
                 actionButton("Run_Annotation","Run Annotation"),
@@ -130,9 +132,9 @@ shinyUI(dashboardPage(
                   h5("Make sure you select the ", br(), "species that matches  your dataset"),
                   h5("If it is not in the list, we advise", br(), " to choose the most phylogenetically ", br(), "related species")
 
+
                 ) #menuItem
 
-                                
                 
     )
   ), # fin dashboardSidebar
@@ -218,7 +220,8 @@ shinyUI(dashboardPage(
                
                br(),
                
-               fluidRow(
+
+	       fluidRow(
                         tabBox(
                           title = "First tabBox",
                           # The id lets us use input$tabset1 on the server to find the current tab

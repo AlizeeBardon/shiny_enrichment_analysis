@@ -8,12 +8,14 @@
 #
 #BiocManager::install("clusterProfiler")
 #BiocManager::install("pathview")
-#BiocManager::install("pasilla")
+#BiocManager::install("pasilla") 
+# BiocManager::install("biomaRt")
 
-organism = "org.Mm.eg.db"
-#BiocManager::install(organism, character.only = TRUE)
-library(organism, character.only = TRUE)
 
+organism = "org.Mm.eg.db" 
+#BiocManager::install(organism, character.only = TRUE) 
+library(organism, character.only = TRUE) 
+library(org.Mm.eg.db)
 
 library(clusterProfiler) 
 library(biomaRt)
@@ -152,25 +154,20 @@ re <- reactive({
 # Annotation Table
     
     annot <- eventReactive(input$Run_Annotation, {
-        data <- re()
-        organism <- input$espece
-        gene_list = data$ID
-        generef = bitr(gene_list, fromType = "ENSEMBL", toType= "GO", OrgDb=organism)
+        data <- re() 
+        gene_list = data$GeneName                 
+        organism = input$espece
+        generef = bitr(gene_list, fromType = "SYMBOL", toType= "GO", OrgDb=organism)
     })
 
     output$annotation <- renderDataTable({
       D <- annot()
       DT::datatable(D)
     })#fin renderDataTable
-    
 
     # -------------------------------------------------------------------
     # BODY: tabPanel :GO Term Enrichment --------------------------------
     # -------------------------------------------------------------------
-    
-    
-    
-    
     
     output$Table_go_enrichment <- renderDataTable({
       resOrdered <- re()
@@ -271,10 +268,6 @@ re <- reactive({
       DT::datatable(res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),])
       
     })#fin renderDataTable
-    
-    
-    
-    
     
     } # end function(input, output) {
 ) # end shinyServer(
