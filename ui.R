@@ -88,7 +88,7 @@ shinyUI(dashboardPage(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
                             ".csv")
-                )
+                ),
 
                 menuItem(
                   "need any help to import your data ?",
@@ -118,8 +118,7 @@ shinyUI(dashboardPage(
                                   "Anopheles (org.Ag.eg.db)"="org.Ag.eg.db",
                                   "Malaria (org.Pf.plasmo.db)"="org.Pf.plasmo.db",
                                   "E coli strain Sakai (org.EcSakai.eg.db)"="org.EcSakai.eg.db"
-                                ),
-
+                                )
                  
                 ) , 
                 
@@ -168,7 +167,7 @@ shinyUI(dashboardPage(
                                label = "pvalue",
                                min = 0,
                                max = 0.25,
-                               value = 0.05),
+                               value = 0.05)
                ), # fin box
                
                
@@ -185,11 +184,11 @@ shinyUI(dashboardPage(
                     width = 12),
                
                box (dataTableOutput("annotation"), 
-                    width = 12),
+                    width = 12)
             
              
       ), # tabPanel("Whole Data Analysis"
-      
+    
       
       # BODY: tabPanel : GO Term Enrichment --------------------------------
       
