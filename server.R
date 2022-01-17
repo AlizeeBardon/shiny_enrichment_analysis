@@ -6,15 +6,14 @@
 #
 #    http://shiny.rstudio.com/
 #
+#BiocManager::install("clusterProfiler")
+#BiocManager::install("pathview")
+#BiocManager::install("pasilla")
 
+organism = "org.Mm.eg.db"
+#BiocManager::install(organism, character.only = TRUE)
+library(organism, character.only = TRUE)
 
-# if (!requireNamespace("BiocManager", quietly = TRUE))
-#   install.packages("BiocManager")
-# 
-# BiocManager::install("biomaRt", "pathview", "clusterProfiler")
-
-
-organism = "org.Mm.eg.db" 
 
 library(clusterProfiler) 
 library(biomaRt)
@@ -151,18 +150,130 @@ re <- reactive({
     }) # fin observe
     
 # Annotation Table
-
+    
     annot <- eventReactive(input$Run_Annotation, {
-        data <- re() 
-        gene_list = data$GeneName                 
-        organism = input$espece
-        generef = bitr(gene_list, fromType = "SYMBOL", toType= "GO", OrgDb=organism)
+        data <- re()
+        organism <- input$espece
+        gene_list = data$ID
+        generef = bitr(gene_list, fromType = "ENSEMBL", toType= "GO", OrgDb=organism)
     })
 
     output$annotation <- renderDataTable({
       D <- annot()
       DT::datatable(D)
     })#fin renderDataTable
+    
+
+    # -------------------------------------------------------------------
+    # BODY: tabPanel :GO Term Enrichment --------------------------------
+    # -------------------------------------------------------------------
+    
+    
+    
+    
+    
+    output$Table_go_enrichment <- renderDataTable({
+      resOrdered <- re()
+      
+      # get the interest list
+      # genes considered DE with treshold alpha = 0.05 
+      GeneList = resOrdered[which(resOrdered$padj<=0.05),]$ID
+      GeneList = data.frame(Gene = GeneList)
+      head(GeneList)
+      tail(GeneList)
+      
+      # get gene annotation (for all genes)
+      genes = resOrdered$ID
+      GeneRef =  bitr(genes, fromType="ENSEMBL", toType="GO", OrgDb="org.Mm.eg.db")
+      filtre_annotation = input$filtre_annotation
+      GeneRef <- subset(GeneRef, ONTOLOGY == filtre_annotation)
+      head(GeneRef)
+      
+      
+      #################################################
+      #  prepare data for enrichment                  #
+      #################################################
+      get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
+        # reference list
+        # m : nb of annotated genes in the reference list (for each term)
+        m = table(GeneRef$GO)
+        # n : nb of non annotated genes in the reference list
+        n = length(unique(GeneRef$ENSEMBL)) - m
+        
+        # experience (interest list)
+        # x : nb of annotated genes in the interest list
+        experience = merge(GeneList, GeneRef, by.x = "Gene", by.y = "ENSEMBL")
+        x = table(factor(experience$GO, rownames(m)))
+        # k : total nb of genes in the interest list
+        k = length(unique(GeneList$Gene))
+        
+        Term = unique(GeneRef$GO)
+        x = as.numeric(x)
+        m = as.numeric(m)
+        k = as.numeric(k)
+        n = as.numeric(n)
+        
+        return(list(Term = Term, 
+                    x = x, 
+                    k = k, 
+                    m = m, 
+                    n = n))
+      }
+      Gene.Bg.ratio = get_Gene_and_Bg_ratio(GeneList = GeneList, GeneRef = GeneRef)
+      Bg.ratio = signif(100 * Gene.Bg.ratio$m/(Gene.Bg.ratio$m + Gene.Bg.ratio$n), 3)
+      Gene.ratio = signif(100 * Gene.Bg.ratio$x / Gene.Bg.ratio$k, 3)
+      
+      
+      
+      #################################################
+      #  hypergeometric test                          #
+      #################################################
+      hypergeom_test = function(x, k, m, n){
+        # calculate p-value and adjusted p-value
+        pvalue = phyper(x-1,m,n,k,lower.tail=FALSE)
+        padj = p.adjust(pvalue, n=length((pvalue)))
+        
+        return (list(pvalue = pvalue, padj = padj))
+      }
+      res_hypergeom_test = hypergeom_test(x = Gene.Bg.ratio$x, 
+                                          k = Gene.Bg.ratio$k,
+                                          m = Gene.Bg.ratio$m, 
+                                          n = Gene.Bg.ratio$n)
+      
+      #################################################
+      #  create results table                         #
+      #################################################
+      create_table_enrichment = function(GeneList, GeneRef){
+        # call function get_Gene_and_Bg_ratio() to get BgRatio and GeneRatio 
+        Gene.Bg.ratio = get_Gene_and_Bg_ratio(GeneList = GeneList, GeneRef = GeneRef)
+        Bg.ratio = signif(100 * Gene.Bg.ratio$m/(Gene.Bg.ratio$m + Gene.Bg.ratio$n), 3)
+        Gene.ratio = signif(100 * Gene.Bg.ratio$x / Gene.Bg.ratio$k, 3)
+        
+        # call function hypergeom_test to get p-value and adjusted p-value
+        test = hypergeom_test(x = Gene.Bg.ratio$x, 
+                              k = Gene.Bg.ratio$k,
+                              m = Gene.Bg.ratio$m, 
+                              n = Gene.Bg.ratio$n)
+        
+        # create dataframe
+        table.enrich = data.frame(Term = Gene.Bg.ratio$Term, 
+                                  GeneRatio = Gene.ratio, 
+                                  BgRatio = Bg.ratio,
+                                  pval = test$pvalue, 
+                                  padj = test$padj, 
+                                  count = Gene.Bg.ratio$x)
+        
+        return (table.enrich[order(table.enrich$pval), ])
+      }
+      res.enrich.hypergeom.GO = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
+      res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),]
+      
+      DT::datatable(res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),])
+      
+    })#fin renderDataTable
+    
+    
+    
     
     
     } # end function(input, output) {

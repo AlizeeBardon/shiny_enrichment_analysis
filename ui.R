@@ -119,7 +119,6 @@ shinyUI(dashboardPage(
                                   "Malaria (org.Pf.plasmo.db)"="org.Pf.plasmo.db",
                                   "E coli strain Sakai (org.EcSakai.eg.db)"="org.EcSakai.eg.db"
                                 ),
-                  #selected = "Human"
                 ) , 
                 
                 actionButton("Run_Annotation","Run Annotation"),
@@ -131,36 +130,10 @@ shinyUI(dashboardPage(
                   h5("Make sure you select the ", br(), "species that matches  your dataset"),
                   h5("If it is not in the list, we advise", br(), " to choose the most phylogenetically ", br(), "related species")
 
-                ), #menuItem
+                ) #menuItem
 
                                 
-                selectInput(
-                  "espece",
-                  label = h4("choose organism:"),
-                  choices = list(
-                    "Anophele" = "Anophele",
-                    "Arabidopsis" = "Arabidopsis",
-                    "Bovine" = "Bovine",
-                    "Worm" = "Worm",
-                    "Canine" = "Canine", 
-                    "Fly" = "Fly",
-                    "ZebraFish" = "ZebraFish",
-                    "Ecoli K12" = "Ecoli K12",
-                    "Ecoli Sakai" = "Ecoli Sakai",
-                    "Chicken" = "Chicken",
-                    "Human" = "Human",
-                    "Mouse" = "Mouse",
-                    "Rhesus" = "Rhesus",
-                    "Myxococcus xanthus DK 1622" = "Myxococcus xanthus DK 1622",
-                    "Malaria" = "Malaria" ,
-                    "Chimpanzee" = "Chimpanzee",
-                    "Rat" =  "Rat",
-                    "Yeast" = "Yeast",
-                    "Pig" = "Pig",
-                    "Xenopus" = "Xenopus"
-                  ),
-                  selected = "Human"
-                )
+                
     )
   ), # fin dashboardSidebar
   
@@ -220,7 +193,31 @@ shinyUI(dashboardPage(
       
       tabPanel("GO Term Enrichment", 
                
-               "text",
+               br(),
+               
+               h1("GO Term Enrichment"), 
+               
+               br(),
+               
+               
+               selectInput( "filtre_annotation",
+                            label = h4("choose organism:"),
+                            choices = list(
+                              "BP"="BP",
+                              "CC"="CC",
+                              "MF"="MF",
+                              "all"=""
+                            )
+               ),
+              
+                            
+               br(),
+                              
+               box (dataTableOutput("Table_go_enrichment"), 
+                    width = 12),
+               
+               br(),
+               
                fluidRow(
                         tabBox(
                           title = "First tabBox",
