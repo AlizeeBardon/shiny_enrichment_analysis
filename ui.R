@@ -232,10 +232,48 @@ shinyUI(dashboardPage(
  
       ), # tabPanel("GO Term Enrichm:qent"
       
-      
+
+      # BODY: tabPanel : Pathway Enrichment -------------------------------- 
       tabPanel("Pathway Enrichment", 
+               br(), br(),
                
-               "text"
+               radioGroupButtons("method", label = h3("Analysis method"),
+                                 choices = list("Over epresentation analysis (ORA)" = 1, "Gene Set Enrichment Analysis (GSEA)" = 2), direction = "horizontal"), 
+               radioGroupButtons("db", label = h3("DataBase"),
+                                 choices = list("KEGG" = 1, "REACTOME (you can try, but it doesn't work...)" = 2), 
+                                 selected = 1, checkIcon = list(
+                                   yes = icon("ok", justufued = TRUE, lib = "glyphicon")), direction = "horizontal"),
+               radioGroupButtons("type", label = h3("DEG type:"), 
+                                 choices = list("Over expressed DEG only" = 1, "Under expressed DEG only" = 2, "Both" = 3), 
+                                 selected = 1, direction = "horizontal"),
+               box (dataTableOutput("Table_kegg"),
+                    width = 12),
+               box(title = "Dot Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                   plotlyOutput("dotplot_kegg", height = "450px")
+               ),
+               box(title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                   plotlyOutput("barplot_kegg", height = "450px")
+               )
+               #fluidRow(DT::dataTableOutput('table_kegg'))
+               
+               # div(
+               # box(title = "Parametres", status = "warning", solidHeader = TRUE, width = 4,
+               #     sliderInput(inputId = "axe_x",
+               #                 label = "log2 fold change (axe x)",
+               #                 min = 0,
+               #                 max = 7,
+               #                 value = 3),
+               #     br(),
+               #     sliderInput(inputId = "axe_y",
+               #                 label = "-log10(p value) (axe y)",
+               #                 min = 0,
+               #                 max = 60,
+               #                 value = 6),
+               #     br(),
+               #     numericInput("color_pvalue", label = h3("pvalue limite selection"), value = 0.05, step = 0.01),
+               #     
+               # ) # fin box
+               
                
       ), # tabPanel("Pathway Enrichment"
       

@@ -269,5 +269,64 @@ re <- reactive({
       
     })#fin renderDataTable
     
+    
+    # -------------------------------------------------------------------
+    # BODY: tabPanel :KEGG --------------------------------
+    # -------------------------------------------------------------------
+    #
+    
+    output$Table_kegg <- renderDataTable({
+      toto <- re()
+      DT::datatable(toto)
+    })
+    
+    kegg_data <- reactive({
+      toto <- re()
+      
+      ids<-bitr(toto$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=input$espece)
+      
+      dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
+      
+      df2 = toto[toto$ID %in% dedup_ids$ENSEMBL,]
+      
+      # Create a new column in df2 with the corresponding ENTREZ IDs
+      df2$Y = dedup_ids$ENTREZID
+      
+      # Create a vector of the gene unuiverse
+      kegg_gene_list <- df2$log2FC
+      
+      # Name vector with ENTREZ ids
+      names(kegg_gene_list) <- df2$Y
+      
+      # omit any NA values 
+      kegg_gene_list<-na.omit(kegg_gene_list)
+      # sort the list in decreasing order (required for clusterProfiler)
+      kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
+    })
+   
+    gse_kegg <- reactive({
+      gse_kegg_data <- kegg_data()
+
+      # gse_kegg_annal <- gseKEGG(geneList     = gse_kegg_data,
+      #                     organism     = "mmu",
+      #                     nPerm        = 10000,
+      #                     minGSSize    = 3,
+      #                     maxGSSize    = 800,
+      #                     pvalueCutoff = 0.05,
+      #                     pAdjustMethod = "none",
+      #                     keyType       = "ncbi-geneid")
+
+    })
+     
+    output$dotplot_kegg <- renderPlotly({
+    toto <- gse_kegg()
+    dotplot(toto, showCategory = 10, title = "Enriched Pathways" , split=".sign")
+    })
+    
+    #gseaplot(kk2, by = "all", title = kk2$Description[2], geneSetID = 1)
+
+    
+    
+    
     } # end function(input, output) {
 ) # end shinyServer(
