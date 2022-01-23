@@ -148,7 +148,7 @@ shinyUI(dashboardPage(
 
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "custom_shinyapp.css")
-    ),
+    ),   
     
     
     
