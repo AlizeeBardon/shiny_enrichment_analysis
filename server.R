@@ -50,6 +50,32 @@ re <- reactive({
           )
         })
 
+pvalue <- reactive({
+  pvalue <- input$pvalue
+  req(pvalue)
+})
+
+tresholdLog2FoldChange <- reactive({
+  tresholdLog2FoldChange <- input$tresholdLog2FoldChange
+  req(tresholdLog2FoldChange)
+})
+
+radio_filtre_ontology <- reactive({
+  radio_filtre_ontology <- input$radio_filtre_ontology
+  req(radio_filtre_ontology)
+})
+
+subset_up_down_regulated <- reactive({
+  subset_up_down_regulated <- input$subset_up_down_regulated
+  req(subset_up_down_regulated)
+})
+
+
+espece <- reactive({
+  espece <- input$espece
+  req(espece)
+})
+
 
     # BODY --------------------------------------------------------------------
     
@@ -67,16 +93,22 @@ re <- reactive({
         
         click_data <- event_data("plotly_click")
         select_data <- event_data("plotly_selected")
-
-        pvalue <- -log10(input$pvalue)
+        
+        pvalue <- pvalue()
+        pvalue_log10 <- -log10(pvalue)
+        tresholdlog2foldchange <- input$tresholdLog2FoldChange
           
-        data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC > 0, "col"] <- "green"
-        data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC < 0, "col"] <- "red"
+        data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC > tresholdlog2foldchange, "col"] <- "green"
+        data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC < -tresholdlog2foldchange, "col"] <- "red"
         
         p <- ggplot(data = data_plot_plotly, mapping = aes(x = log2FC, y = minusLog10Pvalue, col = I(col), key = key)) +
           geom_point(size = 0.45) + 
-          theme_bw()  +
-          xlab("log2 fold change") + ylab("-log10(p-value)")
+          theme_bw()  + 
+          geom_hline(yintercept=pvalue_log10, linetype="dashed", color = "black", size=0.1) +
+          geom_vline(xintercept=tresholdlog2foldchange, linetype="dashed", color = "black", size=0.1) +
+          geom_vline(xintercept=-tresholdlog2foldchange, linetype="dashed", color = "black", size=0.1) +
+          xlab("log2 fold change") + 
+          ylab("-log10(p-value)") 
         
         event_register(p, 'plotly_click')
         event_register(p, 'plotly_selected')
@@ -169,22 +201,67 @@ re <- reactive({
     # BODY: tabPanel :GO Term Enrichment --------------------------------
     # -------------------------------------------------------------------
     
+    output$pvalue_go_enrich <- renderPrint({ 
+      pvalue() })
+    
+    output$log2foldchange_go_enrich <- renderPrint({ input$tresholdLog2FoldChange })
+    
+    output$subset_annotation <- renderDataTable({ 
+      resOrdered <- re()
+      pvalue <- pvalue()
+      tresholdLog2FoldChange <- tresholdLog2FoldChange()
+      subset_up_down_regulated <- subset_up_down_regulated()
+      
+      GeneList = resOrdered[which(resOrdered$padj<=pvalue),]$ID
+      # genes considered DE with treshold log2foldchange (up or down regulated define by user (default= 0.4)
+      if (input$subset_up_down_regulated == "both"){
+        GeneList = resOrdered[which(resOrdered$log2FC< -tresholdLog2FoldChange | resOrdered$log2FC > tresholdLog2FoldChange),]$ID
+      } else if(input$subset_up_down_regulated == "up"){
+        GeneList = resOrdered[which(resOrdered$log2FC > tresholdLog2FoldChange),]$ID
+      } else if(input$subset_up_down_regulated == "down"){
+        GeneList = resOrdered[which(resOrdered$log2FC < -tresholdLog2FoldChange),]$ID
+      }
+      genes = resOrdered$ID
+      GeneRef =  bitr(genes, fromType="ENSEMBL", toType="GO", OrgDb="org.Mm.eg.db")
+      filtre_ontology = input$radio_filtre_ontology
+      if ( filtre_ontology != "all") {
+        GeneRef <- subset(GeneRef, ONTOLOGY == filtre_ontology)
+      }
+      
+      DT::datatable(GeneRef)
+      
+      })
+    
+    
+    
     output$Table_go_enrichment <- renderDataTable({
       resOrdered <- re()
+      pvalue <- pvalue()
+      tresholdLog2FoldChange <- tresholdLog2FoldChange()
+      subset_up_down_regulated <- subset_up_down_regulated()
       
       # get the interest list
-      # genes considered DE with treshold alpha = 0.05 
-      GeneList = resOrdered[which(resOrdered$padj<=0.05),]$ID
+      # genes considered DE with treshold alpha define by user (default= 0.05)
+      GeneList = resOrdered[which(resOrdered$padj<=pvalue),]$ID
+      # genes considered DE with treshold log2foldchange (up or down regulated define by user (default= 0.4)
+      if (input$subset_up_down_regulated == "both"){
+        GeneList = resOrdered[which(resOrdered$log2FC< -tresholdLog2FoldChange | resOrdered$log2FC > tresholdLog2FoldChange),]$ID
+      } else if(input$subset_up_down_regulated == "up"){
+        GeneList = resOrdered[which(resOrdered$log2FC > tresholdLog2FoldChange),]$ID
+      } else if(input$subset_up_down_regulated == "down"){
+        GeneList = resOrdered[which(resOrdered$log2FC < -tresholdLog2FoldChange),]$ID
+      }
+        
+        
       GeneList = data.frame(Gene = GeneList)
-      head(GeneList)
-      tail(GeneList)
-      
+
       # get gene annotation (for all genes)
       genes = resOrdered$ID
       GeneRef =  bitr(genes, fromType="ENSEMBL", toType="GO", OrgDb="org.Mm.eg.db")
-      filtre_annotation = input$filtre_annotation
-      GeneRef <- subset(GeneRef, ONTOLOGY == filtre_annotation)
-      head(GeneRef)
+      filtre_ontology <- radio_filtre_ontology()
+      if ( filtre_ontology != "all") {
+        GeneRef <- subset(GeneRef, ONTOLOGY == filtre_ontology)
+      }
       
       
       #################################################
@@ -268,6 +345,93 @@ re <- reactive({
       DT::datatable(res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),])
       
     })#fin renderDataTable
+    
+    
+    
+    
+    # -------------------------------------------------------------------
+    # BODY: tabPanel :KEGG --------------------------------
+    # -------------------------------------------------------------------
+    
+    
+    annot_ENSEMBL_ENTREZID <- eventReactive(input$Run_Annotation, {
+      data <- re() 
+      gene_list = data$ID                
+      organism = espece()
+      generef = bitr(gene_list, fromType = "ENSEMBL", toType= "ENTREZID", OrgDb=organism)
+    })
+    
+    kegg_data <- reactive({
+      data_kegg <- re()
+      orga = espece()
+      ids<- annot_ENSEMBL_ENTREZID()
+
+      #retirer les duplicats
+      dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
+      data_kegg2 = data_kegg[data_kegg$ID %in% dedup_ids$ENSEMBL,]
+
+      # Create a new column in data_kegg2 with the corresponding ENTREZ IDs
+      data_kegg2$Y = dedup_ids$ENTREZID
+
+      # Create a vector of the gene unuiverse
+      kegg_gene_list <- data_kegg2$log2FC
+
+      # Name vector with ENTREZ ids
+      names(kegg_gene_list) <- data_kegg2$Y
+
+      # omit any NA values
+      kegg_gene_list<-na.omit(kegg_gene_list)
+      # sort the list in decreasing order (required for clusterProfiler)
+      kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
+    })
+    
+    gse_kegg <- reactive({
+      kegg_gene_list <- kegg_data()
+      
+      gse_kegg_annalysis <- gseKEGG(geneList     = kegg_gene_list,
+                          organism     = "mmu",
+                          nPerm        = 10000,
+                          minGSSize    = 3,
+                          maxGSSize    = 800,
+                          pvalueCutoff = 0.05,
+                          pAdjustMethod = "none",
+                          keyType       = "ncbi-geneid")
+    })
+    
+    output$dotplot_kegg <- renderPlotly({
+      gse_kegg <- gse_kegg()
+      dotplot(gse_kegg, showCategory = 10, title = "Enriched Pathways" , split=".sign")
+    })
+    
+    # 
+    # ora_kegg <- reactive({
+    #   ora_kegg_data <- kegg_data()
+    #   head(ora_kegg_data)
+    #   # Exctract significant results from df2
+    #   kegg_sig_genes_df = subset(ora_kegg_data$data_kegg2, padj < 0.05)
+    #   
+    #   
+    #   # From significant results, we want to filter on log2fold change
+    #   kegg_genes <- kegg_sig_genes_df$log2FC
+    #   
+    #   # Name the vector with the CONVERTED ID!
+    #   names(kegg_genes) <- kegg_sig_genes_df$Y
+    #   
+    #   # omit NA values
+    #   kegg_genes <- na.omit(kegg_genes)
+    #   
+    #   # filter on log2fold change (PARAMETER)
+    #   kegg_genes <- names(kegg_genes)[abs(kegg_genes) > 2]
+    #   
+    #   kk <- enrichKEGG(gene=kegg_genes, universe=names(kegg_gene_list),organism=input$espece, pvalueCutoff = 0.05, keyType = "ncbi-geneid")
+    # })
+    # 
+    # output$barplot_kegg <- renderPlotly({
+    #   result_gse_kegg <- ora_kegg()
+    #   barplot(result_gse_kegg, showCategory = 10) 
+    # })
+    
+    
     
     } # end function(input, output) {
 ) # end shinyServer(

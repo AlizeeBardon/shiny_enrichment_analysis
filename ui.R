@@ -118,13 +118,15 @@ shinyUI(dashboardPage(
                                   "Anopheles (org.Ag.eg.db)"="org.Ag.eg.db",
                                   "Malaria (org.Pf.plasmo.db)"="org.Pf.plasmo.db",
                                   "E coli strain Sakai (org.EcSakai.eg.db)"="org.EcSakai.eg.db"
-                                )
+                                ),
+                  selected = NULL
                  
                 ) , 
                 
-                actionButton("Run_Annotation","Run Annotation"),
+                
 
                 br(),
+                
                 
                 menuItem(
                   "Annotation Information ?",
@@ -162,12 +164,24 @@ shinyUI(dashboardPage(
                
                br(),
                
-               box(title = "Parameters", status = "warning", solidHeader = TRUE, width = 12,
-                   sliderInput(inputId = "pvalue",
-                               label = "pvalue",
+               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,
+                   
+                   box (                   
+                     sliderInput(inputId = "pvalue",
+                                 label = "pvalue",
+                                 min = 0,
+                                 max = 0.25,
+                                 value = 0.05),
+                     width = 6),
+                   box (
+                     sliderInput(inputId = "tresholdLog2FoldChange",
+                               label = "treshold for Log2FoldChange",
                                min = 0,
-                               max = 0.25,
-                               value = 0.05)
+                               max = 4,
+                               step = 0.1 ,
+                               value = 0.4),
+                     width = 6 )
+                     
                ), # fin box
                
                
@@ -200,42 +214,121 @@ shinyUI(dashboardPage(
                
                br(),
                
+               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,  
                
-               selectInput( "filtre_annotation",
-                            label = h4("choose organism:"),
-                            choices = list(
-                              "BP"="BP",
-                              "CC"="CC",
-                              "MF"="MF",
-                              "all"=""
-                            )
+                   box(
+                     radioButtons("radio_filtre_ontology", label = h4("Choose ontology"),
+                                  choices = list(
+                                    "all (BP + CC + MF)" = "all",
+                                    "Biological Process (BP)"= "BP",
+                                    "Cellular Component (CC)"= "CC",
+                                    "Molecular Function (MF)"= "MF"
+                                  ),
+                                  selected = 1),
+                     width = 4
+                   
+                     ),
+                   
+                   box(
+                     h4("pvalue"),
+                     verbatimTextOutput("pvalue_go_enrich"), 
+                     h4("log2FoldChange threshold"),
+                     verbatimTextOutput("log2foldchange_go_enrich"), 
+                     h6("if you want to change the pvalue log2FC threshold, modified the corresponding slider in the Whole Data Analysis part"),
+                     
+                     width = 4
+                   ), 
+                   
+                   box(
+                   
+                     radioButtons("subset_up_down_regulated", label = h4("Expression selection (upregulated or downregulated)"),
+                                choices = list(
+                                  "both up and down regulated" = "both",
+                                  "up regulated (> log2foldchange)"= "up",
+                                  "down regulated (< -log2foldchange)"= "down"
+                                ),
+                                
+                                selected = 1),
+                   width = 4
+                   )
+                   
+               
+                     
                ),
               
-                            
+               
                br(),
                               
                box (dataTableOutput("Table_go_enrichment"), 
                     width = 12),
                
-               br(),
-               
-
-	       fluidRow(
-                        tabBox(
-                          title = "First tabBox",
-                          # The id lets us use input$tabset1 on the server to find the current tab
-                          id = "tabset1", height = "250px",
-                          tabPanel("Tab1", "First tab content"),
-                          tabPanel("Tab2", "Tab content 2")
-                        )
-               ) #fluidrow
  
       ), # tabPanel("GO Term Enrichm:qent"
       
       
       tabPanel("Pathway Enrichment", 
                
-               "text"
+               
+               h1("Pathway Enrichment"), 
+               
+               br(),
+               
+               
+               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,  
+               
+                 box(
+                   radioGroupButtons("method", label = h3("Analysis method"),
+                                 choices = list(
+                                   "Over epresentation analysis (ORA)" = 1, 
+                                   "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                 direction = "vertical"),
+                   width = 4
+                   ),
+                 
+                 box(
+               
+                   radioGroupButtons("db", label = h3("DataBase"),
+                                 choices = list(
+                                   "KEGG" = 1, 
+                                   "REACTOME (you can try, but it doesn't work...)" = 2), 
+                                 direction = "vertical"),
+                   width = 5
+                   ),
+                 
+                 box(
+                   radioGroupButtons("type", label = h3("DEG type:"), 
+                                 choices = list(
+                                   "Over expressed DEG only" = 1, 
+                                   "Under expressed DEG only" = 2, 
+                                   "Both" = 3), 
+                                 direction = "vertical"),
+                   width = 3
+                   ),
+                 
+                 box(
+                   actionButton("Run_Annotation","Run Annotation"),
+                   width = 12
+                 )
+                 
+               
+                 ),
+               
+               box(title = "Dot Plot", status = "warning", solidHeader = TRUE, width = 12, height = "850px",
+                   plotlyOutput("dotplot_kegg", height = "750px")
+               ),
+  
+               
+               
+               
+               box(
+                 title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 12, height = "850px",
+                   plotlyOutput("barplot_kegg", height = "750px")
+               )
+               
+               
+               
+               
+               
                
       ), # tabPanel("Pathway Enrichment"
       
