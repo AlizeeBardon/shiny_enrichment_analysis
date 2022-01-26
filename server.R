@@ -1,4 +1,3 @@
-#
 # This is the server logic of a Shiny web application. You can run the
 # application by clicking 'Run App' above.
 #
@@ -9,14 +8,13 @@
 #BiocManager::install("clusterProfiler")
 #BiocManager::install("pathview")
 #BiocManager::install("pasilla") 
-# BiocManager::install("biomaRt")
+#BiocManager::install("biomaRt")
   
 
-organism = "org.Mm.eg.db" 
+organism = "org.Hs.eg.db" 
 #BiocManager::install(organism, character.only = TRUE) 
 library(organism, character.only = TRUE) 
 library(org.Mm.eg.db)
-
 library(clusterProfiler) 
 library(biomaRt)
 library(pathview)
@@ -354,82 +352,6 @@ espece <- reactive({
     # -------------------------------------------------------------------
     
     
-    annot_ENSEMBL_ENTREZID <- eventReactive(input$Run_Annotation, {
-      data <- re() 
-      gene_list = data$ID                
-      organism = espece()
-      generef = bitr(gene_list, fromType = "ENSEMBL", toType= "ENTREZID", OrgDb=organism)
-    })
-    
-    kegg_data <- reactive({
-      data_kegg <- re()
-      orga = espece()
-      ids<- annot_ENSEMBL_ENTREZID()
-
-      #retirer les duplicats
-      dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
-      data_kegg2 = data_kegg[data_kegg$ID %in% dedup_ids$ENSEMBL,]
-
-      # Create a new column in data_kegg2 with the corresponding ENTREZ IDs
-      data_kegg2$Y = dedup_ids$ENTREZID
-
-      # Create a vector of the gene unuiverse
-      kegg_gene_list <- data_kegg2$log2FC
-
-      # Name vector with ENTREZ ids
-      names(kegg_gene_list) <- data_kegg2$Y
-
-      # omit any NA values
-      kegg_gene_list<-na.omit(kegg_gene_list)
-      # sort the list in decreasing order (required for clusterProfiler)
-      kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
-    })
-    
-    gse_kegg <- reactive({
-      kegg_gene_list <- kegg_data()
-      
-      gse_kegg_annalysis <- gseKEGG(geneList     = kegg_gene_list,
-                          organism     = "mmu",
-                          nPerm        = 10000,
-                          minGSSize    = 3,
-                          maxGSSize    = 800,
-                          pvalueCutoff = 0.05,
-                          pAdjustMethod = "none",
-                          keyType       = "ncbi-geneid")
-    })
-    
-    output$dotplot_kegg <- renderPlotly({
-      gse_kegg <- gse_kegg()
-      dotplot(gse_kegg, showCategory = 10, title = "Enriched Pathways" , split=".sign")
-    })
-    
-    # 
-    # ora_kegg <- reactive({
-    #   ora_kegg_data <- kegg_data()
-    #   head(ora_kegg_data)
-    #   # Exctract significant results from df2
-    #   kegg_sig_genes_df = subset(ora_kegg_data$data_kegg2, padj < 0.05)
-    #   
-    #   
-    #   # From significant results, we want to filter on log2fold change
-    #   kegg_genes <- kegg_sig_genes_df$log2FC
-    #   
-    #   # Name the vector with the CONVERTED ID!
-    #   names(kegg_genes) <- kegg_sig_genes_df$Y
-    #   
-    #   # omit NA values
-    #   kegg_genes <- na.omit(kegg_genes)
-    #   
-    #   # filter on log2fold change (PARAMETER)
-    #   kegg_genes <- names(kegg_genes)[abs(kegg_genes) > 2]
-    #   
-    #   kk <- enrichKEGG(gene=kegg_genes, universe=names(kegg_gene_list),organism=input$espece, pvalueCutoff = 0.05, keyType = "ncbi-geneid")
-    # })
-    # 
-    # output$barplot_kegg <- renderPlotly({
-    #   result_gse_kegg <- ora_kegg()
-    #   barplot(result_gse_kegg, showCategory = 10) 
-    # })
     
     
     

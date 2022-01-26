@@ -260,7 +260,7 @@ shinyUI(dashboardPage(
                br(),
                               
                box (dataTableOutput("Table_go_enrichment"), 
-                    width = 12),
+                    width = 12)
                
  
       ), # tabPanel("GO Term Enrichm:qent"
@@ -268,66 +268,13 @@ shinyUI(dashboardPage(
       
       tabPanel("Pathway Enrichment", 
                
+               br(),
                
                h1("Pathway Enrichment"), 
                
                br(),
                
-               
-               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,  
-               
-                 box(
-                   radioGroupButtons("method", label = h3("Analysis method"),
-                                 choices = list(
-                                   "Over epresentation analysis (ORA)" = 1, 
-                                   "Gene Set Enrichment Analysis (GSEA)" = 2), 
-                                 direction = "vertical"),
-                   width = 4
-                   ),
-                 
-                 box(
-               
-                   radioGroupButtons("db", label = h3("DataBase"),
-                                 choices = list(
-                                   "KEGG" = 1, 
-                                   "REACTOME (you can try, but it doesn't work...)" = 2), 
-                                 direction = "vertical"),
-                   width = 5
-                   ),
-                 
-                 box(
-                   radioGroupButtons("type", label = h3("DEG type:"), 
-                                 choices = list(
-                                   "Over expressed DEG only" = 1, 
-                                   "Under expressed DEG only" = 2, 
-                                   "Both" = 3), 
-                                 direction = "vertical"),
-                   width = 3
-                   ),
-                 
-                 box(
-                   actionButton("Run_Annotation","Run Annotation"),
-                   width = 12
-                 )
-                 
-               
-                 ),
-               
-               box(title = "Dot Plot", status = "warning", solidHeader = TRUE, width = 12, height = "850px",
-                   plotlyOutput("dotplot_kegg", height = "750px")
-               ),
-  
-               
-               
-               
-               box(
-                 title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 12, height = "850px",
-                   plotlyOutput("barplot_kegg", height = "750px")
-               )
-               
-               
-               
-               
+
                
                
       ), # tabPanel("Pathway Enrichment"
