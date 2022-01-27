@@ -35,7 +35,7 @@ shinyServer(function(input, output) {
 ######################################################################### 
 ###### input data    
 #########################################################################
-  
+
 re <- reactive({
       file <- input$file1
       ext <- tools::file_ext(file$datapath)
@@ -94,7 +94,7 @@ espece <- reactive({
         
         pvalue <- pvalue()
         pvalue_log10 <- -log10(pvalue)
-        tresholdlog2foldchange <- input$tresholdLog2FoldChange
+        tresholdlog2foldchange <- tresholdLog2FoldChange()
           
         data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC > tresholdlog2foldchange, "col"] <- "green"
         data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC < -tresholdlog2foldchange, "col"] <- "red"
@@ -129,10 +129,12 @@ espece <- reactive({
       click_data <- event_data("plotly_click")
       select_data <- event_data("plotly_selected")
       
-      pvalue <- -log10(input$pvalue)
+      pvalue <- pvalue()
+      pvalue_log10 <- -log10(pvalue)
+      tresholdlog2foldchange <- tresholdLog2FoldChange()
       
-      data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC > 0, "col"] <- "green"
-      data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC < 0, "col"] <- "red"
+      data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC > tresholdlog2foldchange, "col"] <- "green"
+      data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC < -tresholdlog2foldchange, "col"] <- "red"
       
       p <- ggplot(data = data_plot_plotly, mapping = aes(
         x = log2(baseMean), y = log2FC, col = I(col), key = key)) +
@@ -181,19 +183,9 @@ espece <- reactive({
       
     }) # fin observe
     
-# Annotation Table
-    
-    annot <- eventReactive(input$Run_Annotation, {
-        data <- re() 
-        gene_list = data$GeneName                 
-        organism = input$espece
-        generef = bitr(gene_list, fromType = "SYMBOL", toType= "GO", OrgDb=organism)
-    })
 
-    output$annotation <- renderDataTable({
-      D <- annot()
-      DT::datatable(D)
-    })#fin renderDataTable
+
+
 
     # -------------------------------------------------------------------
     # BODY: tabPanel :GO Term Enrichment --------------------------------
@@ -350,9 +342,158 @@ espece <- reactive({
     # -------------------------------------------------------------------
     # BODY: tabPanel :KEGG --------------------------------
     # -------------------------------------------------------------------
+
+    # Annotation Table
+    
+    annot <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
+      data <- re() 
+      orga = input$espece
+      generef = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=orga)
+    })
+    
+    kegg_data <- reactive({
+      df <- re()
+
+      ids <- annot()
+      dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
+      
+      df2 = df[df$ID %in% dedup_ids$ENSEMBL,]
+      
+      # Create a new column in df2 with the corresponding ENTREZ IDs
+      df2$Y = dedup_ids$ENTREZID
+      
+      # Create a vector of the gene unuiverse
+      kegg_gene_list <- df2$log2FC
+      
+      # Name vector with ENTREZ ids
+      names(kegg_gene_list) <- df2$Y
+      
+      # omit any NA values 
+      kegg_gene_list<-na.omit(kegg_gene_list)
+      # sort the list in decreasing order (required for clusterProfiler)
+      kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
+      list(kegg_gene_list=kegg_gene_list, df2=df2)
+    })
+   
+    gse_kegg <- reactive({
+      gse_kegg_data <- kegg_data()
+      gse_kegg_annal <- gseKEGG(geneList     = gse_kegg_data$kegg_gene_list,
+                          organism     = "mmu",
+                          nPerm        = 10000,
+                          minGSSize    = 3,
+                          maxGSSize    = 800,
+                          pvalueCutoff = 0.05,
+                          pAdjustMethod = "none",
+                          keyType       = "ncbi-geneid")
+
+    })
+     
+    
+    ora_kegg <- reactive({
+      ora_kegg_data <- kegg_data()
+      
+      # Exctract significant results from df2
+      kegg_sig_genes_df = subset(ora_kegg_data$df2, padj < 0.05)
+      
+      # From significant results, we want to filter on log2fold change
+      
+      kegg_genes <- kegg_sig_genes_df$log2FC
+      
+      # Name the vector with the CONVERTED ID!
+      names(kegg_genes) <- kegg_sig_genes_df$Y
+      
+      # omit NA values
+      kegg_genes <- na.omit(kegg_genes)
+      
+      # filter on log2fold change (PARAMETER)
+      kegg_genes <- names(kegg_genes)[abs(kegg_genes) > 2]
+      
+      kk <- enrichKEGG(gene=kegg_genes, universe=names(kegg_gene_list),organism='mmu', pvalueCutoff = 0.05, keyType = "ncbi-geneid")
+      
+    })
     
     
+    output$enrichKEGG_table <- renderDataTable({
+      data <- ora_kegg()
+      data.df <- as.data.frame(data)
+      DT::datatable(data.df)
+    })#fin renderDataTable
+   
+#     annotation_gsea <- eventReactive(input$GSEA_Annotation, {
+#       pval_threshold <- input$pvalue_gsea
+#       if (renderPrint({ input$method }) == 1){
+#         
+#         output$barplot_kegg <- renderPlotly({
+#           result_gse_kegg <- ora_kegg()
+#           barplot(result_gse_kegg, showCategory = 10)
+#         })
+#         
+#         output$pathview_kegg <- renderImage({
+#           result_gse_kegg <- ora_kegg()
+#           
+#           path_id<-result_gse_kegg$ID[1]
+#           pathview(cpd.data=kegg_gene_list, pathway.id=path_id, species = "mmu")
+#           path_img<-paste("./",path_id,".pathview.png", sep="")
+#           list(src = path_img,
+#                alt = "This is alternate text")
+#         }, deleteFile = TRUE)
+#       }
+#       else {
+#         
+#         
+#         output$gseaplot_kegg <- renderPlotly({
+#           result_gse_kegg <- gse_kegg()
+#           
+#           gseaplot(result_gse_kegg, by = "all", title = kk2$Description[2], geneSetID = 1)
+#         })  
+#         
+#         output$dotplot_kegg <- renderPlotly({
+#           toto <- gse_kegg()
+#           dotplot(toto, showCategory = 10, title = "Enriched Pathways" , split=".sign")
+#         })
+#       }
+#     })
+#   
+#     
+# ###########################A FAIRE FONCTIONNER################################  
+#     output$gsea_annot <- renderDataTable({
+#       D <- ora_kegg()
+#       DT::datatable(D)
+#     })#fin renderDataTable
+# ###########################A FAIRE FONCTIONNER################################
     
+
+     output$dotplot_kegg <- renderPlotly({
+     toto <- gse_kegg()
+     dotplot(toto, showCategory = 10, title = "Enriched Pathways" , split=".sign")
+     })
+
+
+
+
+     output$barplot_kegg <- renderPlotly({
+       result_gse_kegg <- ora_kegg()
+       barplot(result_gse_kegg, showCategory = 10)
+     })
+
+
+     output$gseaplot_kegg <- renderPlotly({
+       result_gse_kegg <- gse_kegg()
+       gseaplot(result_gse_kegg, by = "all", title =kk$Description[1], geneSetID = 1)
+     })
+
+
+     output$pathview_kegg <- renderImage({
+       result_gse_kegg <- ora_kegg()
+
+    
+       path_id<-result_gse_kegg$ID[1]
+       pathview(cpd.data=kegg_gene_list, pathway.id=path_id, species = "mmu")
+       path_img<-paste("./",path_id,".pathview.png", sep="")
+       list(src = path_img,
+            alt = "This is alternate text")
+     }, deleteFile = TRUE)
+
     
     
     } # end function(input, output) {

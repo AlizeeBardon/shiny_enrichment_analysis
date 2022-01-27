@@ -191,14 +191,9 @@ shinyUI(dashboardPage(
                
                box(title = "MA Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
                    plotlyOutput("MAPlot_plotly",  height = "450px")
-               ), #fin box
+               ) #fin box
                
- 
-               box (dataTableOutput("Table_subset_data_selected"), 
-                    width = 12),
-               
-               box (dataTableOutput("annotation"), 
-                    width = 12)
+
             
              
       ), # tabPanel("Whole Data Analysis"
@@ -265,8 +260,11 @@ shinyUI(dashboardPage(
  
       ), # tabPanel("GO Term Enrichm:qent"
       
+
+      # BODY: tabPanel : Pathway Enrichment -------------------------------- 
       
       tabPanel("Pathway Enrichment", 
+               
                
                br(),
                
@@ -274,10 +272,84 @@ shinyUI(dashboardPage(
                
                br(),
                
+               
+               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,  
+                   
+                   box(
+                     radioGroupButtons("method", label = h3("Analysis method"),
+                                       choices = list(
+                                         "Over epresentation analysis (ORA)" = 1, 
+                                         "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                       direction = "vertical"),
+                     width = 4
+                   ),
+                   
+                   box(
+                     
+                     radioGroupButtons("db", label = h3("DataBase"),
+                                       choices = list(
+                                         "KEGG" = 1, 
+                                         "REACTOME (you can try, but it doesn't work...)" = 2), 
+                                       direction = "vertical"),
+                     width = 5
+                   ),
+                   
+                   box(
+                     radioGroupButtons("type", label = h3("DEG type:"), 
+                                       choices = list(
+                                         "Over expressed DEG only" = 1, 
+                                         "Under expressed DEG only" = 2, 
+                                         "Both" = 3), 
+                                       direction = "vertical"),
+                     width = 3
+                   ),
+                   
+                   box(
+  
+                   sliderInput(inputId = "pvalue_gsea",
+                               label = "pvalue",
+                               min = 0,
+                               max = 0.25,
+                               value = 0.05),
+                   width = 9
+                   
+                   ),
+                   
+                   box(
+                     actionButton("Run_Annotation_ENSEMBL_to_GO","Run Annotation"),
+                     width = 3
+                   )
+                   
+                   
+               ),
+               
+               box (dataTableOutput("enrichKEGG_table"), 
+                    width = 12),
+               
+               box(title = "Dot Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                   plotlyOutput("dotplot_kegg", height = "450px")
+               ),
+               
+
+               box(
+                 title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                 plotlyOutput("barplot_kegg", height = "450px")
+               ),
+               
+               box(title = "GSE Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                   plotlyOutput("gseaplot_kegg", height = "450px")
+               ),
 
                
                
-      ), # tabPanel("Pathway Enrichment"
+               box(title = "Pathview Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                   imageOutput("pathview_kegg", height = "450px")
+               )
+
+                
+               ), # tabPanel("Pathway Enrichment"
+
+
       
       
       tabPanel("Protein Domain Enrichment", "text"
