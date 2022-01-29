@@ -352,7 +352,72 @@ shinyUI(dashboardPage(
 
       
       
-      tabPanel("Protein Domain Enrichment", "text"
+
+      tabPanel("Protein Domain Enrichment", "text",
+              
+                br(),
+               
+               h1("Protein Domain Enrichment"), 
+               
+               br(),
+               
+               
+               h4("Pour les domaines au moins une méthode ( Ora) sera à coder"),
+               h4(" En plan B : vous pourrez utiliser les scripts « enrich () » ou « gsea () de cluster profiler"),
+                  
+               br(),br(),
+                  
+               h5("La phase de récupération des annotations (domain ID) pour l’organisme considéré grâce
+au package BiomaRt sur Ensembl."),
+               h5("toute la liste des domains ID de l’organisme (background= théorie = attendue)"), 
+               h5("extraire la sous liste de domain ID correspondant aux DEG considérés (observée =
+échantillon)"),
+               br(),br(),
+               h5("Test statistique avec codage en R (Test de Fisher)"),
+               h5("comparaison de la fréquence d'apparition de l'annotation dans l’échantillon par rapport à sa fréquence d'apparition attendue ( background))."),
+               h5("Calcul d’une P valeur pour chaque domaine"),
+               h5("Ajustement des pvalues pour les comparaisons multiples (choix d’une méthode ) :
+obtention de pval adj"),
+               h5(""),
+               h5("Les domaines dont la pval adj est inferieure à un seuil fixé par l'utilisateur sont
+considérés alors comme enrichis."),
+               
+               
+               
+               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,
+                   box(
+                     radioGroupButtons("method", label = h4("Analysis method"),
+                                       choices = list(
+                                         "Over epresentation analysis (ORA)" = 1, 
+                                         "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                       direction = "vertical"),
+                     width = 4
+                   ),
+                   
+                   box (                   
+                     sliderInput(inputId = "pvalue_domains",
+                                 label = h4("Select a adjusted p-value cutoff"),
+                                 min = 0,
+                                 max = 0.25,
+                                 value = 0.05),
+                     width = 4),
+                   
+                   box(
+                     radioGroupButtons("type", label = h4("DEG type:"), 
+                                       choices = list(
+                                         "Over expressed DEG only" = 1, 
+                                         "Under expressed DEG only" = 2, 
+                                         "Both" = 3), 
+                                       direction = "vertical"),
+                     width = 4
+                   ),
+                   
+                   box(
+                     actionButton("Run_protein_domains",h4("Run Protein Domains")),
+                     width = 12
+                   )
+               )
+                   
       ) # tabPanel("Protein Domain Enrichment"
       
       
