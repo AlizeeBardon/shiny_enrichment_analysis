@@ -4,4 +4,7 @@
 .Rproj.user
 *.png
 *.xml
-token_acces
+token_access
+sabotage*.csv
+test.R
+attributes.txt

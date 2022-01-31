@@ -26,6 +26,7 @@ library(plotly)
 library(highcharter)
 library(DT)
 library(ggplot2)
+library(shinyalert)
 
 
 
@@ -42,11 +43,25 @@ re <- reactive({
       req(file)
       print(head(file))
       validate(need(ext == "csv", "Invalid file. Please upload a .csv file"))
+      #list_df <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
       data <- read.csv(file$datapath, header = TRUE, sep = ";") %>% 
         mutate(
           minusLog10Pvalue = -log10(padj)
           )
-        })
+      validate(need(ncol(data) == 7, "Invalid file. Please upload a file with 6 col"))
+      
+      required_columns <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
+      column_names <- colnames(data)
+      min_columns <- 6
+      
+      shiny::validate(
+        need(ncol(data) >= min_columns, "Your data has not enought columns. Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj"),
+        need(all(required_columns %in% column_names), "You don't have the right data.  Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj")
+      )
+      
+      data
+      
+      })
 
 pvalue <- reactive({
   pvalue <- input$pvalue
@@ -115,6 +130,10 @@ espece <- reactive({
           layout(dragmode = "lasso")  %>% 
           layout(showlegend = FALSE)
         
+        
+        config(plotly_object,
+               toImageButtonOptions= list(filename = paste0("VolcanoPlot_pvalue_", pvalue, "_log2FC_", tresholdlog2foldchange)))
+
       })
     
 
@@ -146,6 +165,10 @@ espece <- reactive({
       plotly_object <- ggplotly(p,source = "source1") %>% 
         layout(dragmode = "lasso")  %>% 
         layout(showlegend = FALSE)
+      
+      config(plotly_object,
+             toImageButtonOptions= list(filename = paste0("MAPlot_pvalue_", pvalue, "_log2FC_", tresholdlog2foldchange)))
+      
       
     })
     
