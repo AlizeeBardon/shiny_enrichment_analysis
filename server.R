@@ -99,21 +99,21 @@ espece <- reactive({
 
 
     output$volcanoPlot_plotly <- renderPlotly({
-
+        #input data
         data_plot_plotly <- re()
-        data_plot_plotly$key <- row.names(data_plot_plotly)
         data_plot_plotly$col <- "black"
-        
-        click_data <- event_data("plotly_click")
-        select_data <- event_data("plotly_selected")
-        
         pvalue <- pvalue()
         pvalue_log10 <- -log10(pvalue)
         tresholdlog2foldchange <- tresholdLog2FoldChange()
-          
         data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC > tresholdlog2foldchange, "col"] <- "green"
         data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC < -tresholdlog2foldchange, "col"] <- "red"
         
+        # preparation of the interactive table (save the selected point into variables)
+        data_plot_plotly$key <- row.names(data_plot_plotly)
+        click_data <- event_data("plotly_click")
+        select_data <- event_data("plotly_selected")
+          
+
         p <- ggplot(data = data_plot_plotly, mapping = aes(x = log2FC, y = minusLog10Pvalue, col = I(col), key = key)) +
           geom_point(size = 0.45) + 
           theme_bw()  + 
@@ -517,7 +517,146 @@ espece <- reactive({
             alt = "This is alternate text")
      }, deleteFile = TRUE)
 
-    
+
+     # -------------------------------------------------------------------
+     # BODY: tabPanel : Protein DOmains   --------------------------------
+     # -------------------------------------------------------------------
+     
+
+     domain_enrichment <- reactive({
+       
+       pvalue <- pvalue()
+       espece <- espece()
+       
+       # or
+       ensembl = useMart("ensembl",dataset="mmusculus_gene_ensembl")
+       
+
+       # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
+       interpro_id <- getBM(
+         attributes=c('interpro', 'ensembl_gene_id'), # namespace_1003 = for go domain
+         filters = 'ensembl_gene_id', #ensembl_gene_id
+         values = data$ID, 
+         mart = ensembl)
+       
+       #resultats de l'analyse differentielle:
+       resOrdered <- re()
+       
+       #liste d'interet
+       GeneList = resOrdered[which(resOrdered$padj<=0.05),]$ID
+       GeneList = data.frame(GeneList)
+       
+       genes = resOrdered$ID
+       interpro_id <- getBM(
+         attributes=c('ensembl_gene_id', 'interpro'), # namespace_1003 = for go domain
+         filters = 'ensembl_gene_id', #ensembl_gene_id
+         values = genes, 
+         mart = ensembl)
+       
+       GeneRef <- subset(interpro_id, interpro_id$interpro != "")
+       
+       
+       ###  I - prepare data for enrichment      
+
+       get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
+         # reference list
+         # m : nb of annotated genes in the reference list (for each term)
+         m = table(GeneRef$interpro)
+         m
+         # n : nb of non annotated genes in the reference list
+         n = length(unique(GeneRef$ensembl_gene_id)) - m
+         n
+         # experience (interest list)
+         # x : nb of annotated genes in the interest list
+         experience = merge(GeneList, GeneRef, by.x = "GeneList", by.y = "ensembl_gene_id")
+         x = table(factor(experience$interpro, rownames(m)))
+         x
+         # k : total nb of genes in the interest list
+         k = length(unique(GeneList$GeneList))
+         
+         Term = unique(GeneRef$interpro)
+         x = as.numeric(x)
+         m = as.numeric(m)
+         k = as.numeric(k)
+         n = as.numeric(n)
+         
+         return(list(Term = Term, 
+                     x = x, 
+                     k = k, 
+                     m = m, 
+                     n = n))
+       }
+       
+       Gene.Bg.ratio = get_Gene_and_Bg_ratio(GeneList = GeneList, GeneRef = GeneRef)
+       head(Gene.Bg.ratio)
+       Bg.ratio = signif(100 * Gene.Bg.ratio$m/(Gene.Bg.ratio$m + Gene.Bg.ratio$n), 3)
+       Gene.ratio = signif(100 * Gene.Bg.ratio$x / Gene.Bg.ratio$k, 3)
+       
+       
+       ###  II -  hypergeometric test                        
+
+       hypergeom_test = function(x, k, m, n){
+         # calculate p-value and adjusted p-value
+         pvalue = phyper(x-1,m,n,k,lower.tail=FALSE)
+         padj = p.adjust(pvalue, n=length((pvalue)))
+         
+         return (list(pvalue = pvalue, padj = padj))
+       }
+       res_hypergeom_test = hypergeom_test(x = Gene.Bg.ratio$x, 
+                                           k = Gene.Bg.ratio$k,
+                                           m = Gene.Bg.ratio$m, 
+                                           n = Gene.Bg.ratio$n)
+       
+       
+       ### III - create results table                        
+       
+       create_table_enrichment = function(GeneList, GeneRef){
+         # call function get_Gene_and_Bg_ratio() to get BgRatio and GeneRatio 
+         Gene.Bg.ratio = get_Gene_and_Bg_ratio(GeneList = GeneList, GeneRef = GeneRef)
+         Bg.ratio = signif(100 * Gene.Bg.ratio$m/(Gene.Bg.ratio$m + Gene.Bg.ratio$n), 3)
+         Gene.ratio = signif(100 * Gene.Bg.ratio$x / Gene.Bg.ratio$k, 3)
+         
+         # call function hypergeom_test to get p-value and adjusted p-value
+         test = hypergeom_test(x = Gene.Bg.ratio$x, 
+                               k = Gene.Bg.ratio$k,
+                               m = Gene.Bg.ratio$m, 
+                               n = Gene.Bg.ratio$n)
+         
+         # create dataframe
+         table.enrich = data.frame(Term = Gene.Bg.ratio$Term, 
+                                   GeneRatio = Gene.ratio, 
+                                   BgRatio = Bg.ratio,
+                                   pval = test$pvalue, 
+                                   padj = test$padj, 
+                                   count = Gene.Bg.ratio$x)
+         
+         return (table.enrich[order(table.enrich$pval), ])
+       }
+       res.enrich.hypergeom.GO = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
+       res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),]
+  # /!\ ajouter : interpro description + pourcentage 
+       } )  
+     
+     
+     output$Table_domains_enrichment <- renderDataTable({ 
+       D <- domain_enrichment()
+       DT::datatable(D) 
+     }) # fin renderDataTable({
+     
+     
+     output$barplot_domains_enrichment <- renderPlotly({
+       D <- domain_enrichment()
+       
+       ggplot(data = D, aes(x = count, y = Term)) +
+         geom_bar(stat = "identity", aes(fill = padj)) +
+         theme(axis.text.x = element_text(
+           angle = 90,
+           hjust = 1,
+           vjust = 0.5
+         ))
+       
+     })
+     
     
     } # end function(input, output) {
 ) # end shinyServer(

@@ -416,7 +416,18 @@ considérés alors comme enrichis."),
                      actionButton("Run_protein_domains",h4("Run Protein Domains")),
                      width = 12
                    )
-               )
+               ),
+               
+               
+               br(),
+               
+               box (dataTableOutput("Table_domains_enrichment"), 
+                    width = 12),
+               
+               box(
+                 title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                 plotlyOutput("barplot_domains_enrichment", height = "450px")
+               ),
                    
       ) # tabPanel("Protein Domain Enrichment"
       
