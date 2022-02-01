@@ -110,8 +110,8 @@ espece <- reactive({
         
         # preparation of the interactive table (save the selected point into variables)
         data_plot_plotly$key <- row.names(data_plot_plotly)
-        click_data <- event_data("plotly_click")
-        select_data <- event_data("plotly_selected")
+        #click_data <- event_data("plotly_click")
+        #select_data <- event_data("plotly_selected")
           
 
         p <- ggplot(data = data_plot_plotly, mapping = aes(x = log2FC, y = minusLog10Pvalue, col = I(col), key = key)) +

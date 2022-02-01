@@ -191,9 +191,10 @@ shinyUI(dashboardPage(
                
                box(title = "MA Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
                    plotlyOutput("MAPlot_plotly",  height = "450px")
-               ) #fin box
+               ), #fin box
                
-
+               box (dataTableOutput("Table_subset_data_selected"), 
+                    width = 12)
             
              
       ), # tabPanel("Whole Data Analysis"
