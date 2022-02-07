@@ -83,7 +83,7 @@ shinyUI(dashboardPage(
   dashboardSidebar(
     width = 250,
     sidebarMenu(id="tabs",
-                fileInput("file1", "Choose CSV File",
+                fileInput("file1", h4("Choose CSV File"),
                           accept = c(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -97,7 +97,7 @@ shinyUI(dashboardPage(
                 ),
                 
                 selectInput( "espece",
-                  label = h4("choose organism:"),
+                  label = h4("Choose organism:"),
                   choices = list(
                                   "Human (org.Hs.eg.db)"="org.Hs.eg.db",
                                   "Mouse (org.Mm.eg.db)"="org.Mm.eg.db",
@@ -358,28 +358,6 @@ shinyUI(dashboardPage(
                h1("Protein Domain Enrichment"), 
                
                br(),
-               
-               
-               h4("Pour les domaines au moins une méthode ( Ora) sera  a coder"),
-               h4(" En plan B : vous pourrez utiliser les scripts « enrich () » ou « gsea () de cluster profiler"),
-                  
-               br(),br(),
-                  
-               h5("La phase de récupération des annotations (domain ID) pour l organisme considéré grâce
-au package BiomaRt sur Ensembl."),
-               h5("toute la liste des domains ID de l organisme (background= théorie = attendue)"), 
-               h5("extraire la sous liste de domain ID correspondant aux DEG considérés (observée =
-échantillon)"),
-               br(),br(),
-               h5("Test statistique avec codage en R (Test de Fisher)"),
-               h5("comparaison de la fréquence d'apparition de l'annotation dans l échantillon par rapport  a sa fréquence d'apparition attendue ( background))."),
-               h5("Calcul d une P valeur pour chaque domaine"),
-               h5("Ajustement des pvalues pour les comparaisons multiples (choix d une méthode ) :
-obtention de pval adj"),
-               h5(""),
-               h5("Les domaines dont la pval adj est inferieure  a un seuil fixé par l'utilisateur sont
-considérés alors comme enrichis."),
-               
                
                
                box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,
