@@ -253,10 +253,7 @@ shinyUI(dashboardPage(
                ),
               
                
-               br(),
-                              
-               box (dataTableOutput("Table_go_enrichment"), 
-                    width = 12)
+               br()
                
  
       ), # tabPanel("GO Term Enrichm:qent"
@@ -411,6 +408,16 @@ considérés alors comme enrichis."),
                                          "Both" = 3), 
                                        direction = "vertical"),
                      width = 4
+                   ),
+                   
+                   box(
+                     fluidRow(column(4, 
+                                     textInput("biomart_listMarts", label = h4("biomart_listMarts"), value = "ensembl"),
+                                     )),
+                     fluidRow(column(4, 
+                                     textInput("biomart_dataset", label = h4("biomart_dataset"), value = "mmusculus_gene_ensembl"),
+                                     )),
+                     width = 12
                    ),
                    
                    box(
