@@ -475,7 +475,7 @@ biomart_dataset <- reactive({
      
      output$barplot_domains_enrichment <- renderPlotly({
        D <- domain_enrichment()
-       ggplot(data = D, aes(x = count, y = Term)) +
+       ggplot(data = D, aes(x= count , y = reorder(Term, count)  ) ) +
          geom_bar(stat = "identity", aes(fill = padj))  +
          theme(axis.text.x = element_text(
            angle = 90,

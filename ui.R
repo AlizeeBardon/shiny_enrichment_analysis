@@ -351,9 +351,9 @@ shinyUI(dashboardPage(
       
       
 
-      tabPanel("Protein Domain Enrichment", "text",
-              
-                br(),
+      tabPanel("Protein Domain Enrichment",
+                
+               br(),
                
                h1("Protein Domain Enrichment"), 
                
@@ -389,18 +389,19 @@ shinyUI(dashboardPage(
                    ),
                    
                    box(
-                     fluidRow(column(4, 
-                                     textInput("biomart_listMarts", label = h4("biomart_listMarts"), value = "ensembl"),
-                                     )),
-                     fluidRow(column(4, 
-                                     textInput("biomart_dataset", label = h4("biomart_dataset"), value = "mmusculus_gene_ensembl"),
-                                     )),
-                     width = 12
+
+                     textInput("biomart_listMarts", label = h4("biomart_listMarts"), value = "ensembl"),
+                     width = 4
+                   ),
+                   
+                   box(
+                     textInput("biomart_dataset", label = h4("biomart_dataset"), value = "mmusculus_gene_ensembl" ),
+                     width = 4
                    ),
                    
                    box(
                      actionButton("Run_protein_domains",h4("Run Protein Domains")),
-                     width = 12
+                     width = 4
                    )
                ),
                
