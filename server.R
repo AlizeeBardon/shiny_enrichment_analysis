@@ -30,7 +30,7 @@ library(ggplot2)
 
 
 # Define server 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
 
 ######################################################################### 
 ###### input data    
@@ -353,7 +353,6 @@ espece <- reactive({
     
     kegg_data <- reactive({
       df <- re()
-
       ids <- annot()
       dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
       
@@ -382,7 +381,7 @@ espece <- reactive({
                           nPerm        = 10000,
                           minGSSize    = 3,
                           maxGSSize    = 800,
-                          pvalueCutoff = 0.05,
+                          pvalueCutoff = input$pvalue_gsea,
                           pAdjustMethod = "none",
                           keyType       = "ncbi-geneid")
 
@@ -406,95 +405,75 @@ espece <- reactive({
       kegg_genes <- na.omit(kegg_genes)
       
       # filter on log2fold change (PARAMETER)
-      kegg_genes <- names(kegg_genes)[abs(kegg_genes) > 2]
-      
-      kk <- enrichKEGG(gene=kegg_genes, universe=names(kegg_gene_list),organism='mmu', pvalueCutoff = 0.05, keyType = "ncbi-geneid")
-      
+      if (input$type == 1){
+        kegg_genes <- names(kegg_genes)[abs(kegg_genes) > 0]
+      }
+      else if(input$type == 2) {
+        kegg_genes <- names(kegg_genes)[abs(kegg_genes) < 0]
+      }
+       kk <- enrichKEGG(gene=kegg_genes, universe=names(ora_kegg_data$kegg_gene_list),organism='mmu', pvalueCutoff = input$pvalue_gsea, keyType = "ncbi-geneid")
     })
     
-    
     output$enrichKEGG_table <- renderDataTable({
-      data <- ora_kegg()
+      if (input$method == 1){
+        data <- ora_kegg()
+      }
+      else {
+        data <- gse_kegg()
+      }
+      updateSelectInput(session, "paths", choices = data$Description)
       data.df <- as.data.frame(data)
       DT::datatable(data.df)
     })#fin renderDataTable
-   
-#     annotation_gsea <- eventReactive(input$GSEA_Annotation, {
-#       pval_threshold <- input$pvalue_gsea
-#       if (renderPrint({ input$method }) == 1){
-#         
-#         output$barplot_kegg <- renderPlotly({
-#           result_gse_kegg <- ora_kegg()
-#           barplot(result_gse_kegg, showCategory = 10)
-#         })
-#         
-#         output$pathview_kegg <- renderImage({
-#           result_gse_kegg <- ora_kegg()
-#           
-#           path_id<-result_gse_kegg$ID[1]
-#           pathview(cpd.data=kegg_gene_list, pathway.id=path_id, species = "mmu")
-#           path_img<-paste("./",path_id,".pathview.png", sep="")
-#           list(src = path_img,
-#                alt = "This is alternate text")
-#         }, deleteFile = TRUE)
-#       }
-#       else {
-#         
-#         
-#         output$gseaplot_kegg <- renderPlotly({
-#           result_gse_kegg <- gse_kegg()
-#           
-#           gseaplot(result_gse_kegg, by = "all", title = kk2$Description[2], geneSetID = 1)
-#         })  
-#         
-#         output$dotplot_kegg <- renderPlotly({
-#           toto <- gse_kegg()
-#           dotplot(toto, showCategory = 10, title = "Enriched Pathways" , split=".sign")
-#         })
-#       }
-#     })
-#   
-#     
-# ###########################A FAIRE FONCTIONNER################################  
-#     output$gsea_annot <- renderDataTable({
-#       D <- ora_kegg()
-#       DT::datatable(D)
-#     })#fin renderDataTable
-# ###########################A FAIRE FONCTIONNER################################
     
+    
+    # output$current_pathways <- renderUI({
+    #   if (input$method == 1){
+    #     data <- ora_kegg()
+    #   }
+    #   else {
+    #     data <- gse_kegg()
+    #   }
+    #   selectInput("paths", label = h4("Choose path"),choices =data$Description,selected = NULL)
+    # })
 
      output$dotplot_kegg <- renderPlotly({
-     toto <- gse_kegg()
-     dotplot(toto, showCategory = 10, title = "Enriched Pathways" , split=".sign")
+       if(input$method == 1){
+         result_kegg <- ora_kegg()
+       }
+       else {
+         result_kegg <- gse_kegg()
+       }
+       dotplot(result_kegg, showCategory = 10, title = "Enriched Pathways")
      })
 
 
-
-
-     output$barplot_kegg <- renderPlotly({
-       result_gse_kegg <- ora_kegg()
-       barplot(result_gse_kegg, showCategory = 10)
-     })
-
-
-     output$gseaplot_kegg <- renderPlotly({
-       result_gse_kegg <- gse_kegg()
-       gseaplot(result_gse_kegg, by = "all", title =kk$Description[1], geneSetID = 1)
+     output$method_kegg <- renderPlotly({
+       if (input$method == 1){
+         result_kegg <- ora_kegg()
+         barplot(result_kegg, showCategory = 10)
+       }
+       else {
+         result_kegg <- gse_kegg()
+         gseaplot(result_kegg, by = "all", title =input$paths, geneSetID = result_kegg[result_kegg$Description==input$paths,]$ID)
+       }
      })
 
 
      output$pathview_kegg <- renderImage({
-       result_gse_kegg <- ora_kegg()
-
-    
-       path_id<-result_gse_kegg$ID[1]
+       if (input$method == 1){
+         result_kegg <- ora_kegg()
+       }
+       else {
+         result_kegg <- gse_kegg()
+       }
+       path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
+       # browser()
+       # path_id<-result_kegg$ID[1]
        pathview(cpd.data=kegg_gene_list, pathway.id=path_id, species = "mmu")
-       path_img<-paste("./",path_id,".pathview.png", sep="")
-       list(src = path_img,
-            alt = "This is alternate text")
+       path_img<-paste("./",path_id,".png", sep="")
+       list(src = path_img)
      }, deleteFile = TRUE)
 
-    
-    
     } # end function(input, output) {
 ) # end shinyServer(

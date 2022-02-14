@@ -16,6 +16,7 @@ library(tidyverse)
 library(plotly)
 library(highcharter)
 library(DT)
+library(shinyBS)
 
 
 # Define UI for application that draws a histogram
@@ -307,7 +308,7 @@ shinyUI(dashboardPage(
                    box(
   
                    sliderInput(inputId = "pvalue_gsea",
-                               label = "pvalue",
+                               label = "pvalue cutoff for enrichment analysis",
                                min = 0,
                                max = 0.25,
                                value = 0.05),
@@ -324,29 +325,35 @@ shinyUI(dashboardPage(
                ),
                
                box (dataTableOutput("enrichKEGG_table"), 
-                    width = 12),
+                    width = 12, style = "overflow-x: scroll;"),
                
-               box(title = "Dot Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+               box(tstatus = "warning", solidHeader = TRUE, width = 12, height = "550px",
                    plotlyOutput("dotplot_kegg", height = "450px")
                ),
                
-
-               box(
-                 title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
-                 plotlyOutput("barplot_kegg", height = "450px")
-               ),
                
-               box(title = "GSE Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
-                   plotlyOutput("gseaplot_kegg", height = "450px")
+               mainPanel(title = "GSE Plot", status = "warning", solidHeader = TRUE, width = 12, height = "550px",
+                   plotlyOutput("method_kegg", height = "450px")
                ),
 
                
                
-               box(title = "Pathview Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
-                   imageOutput("pathview_kegg", height = "450px")
+               # box(title = "Pathview Plot", status = "warning", solidHeader = TRUE, width = 12, height = "550px",
+               #     imageOutput("pathview_kegg", height = "450px")
+               # ),
+               sidebarLayout(
+                 sidebarPanel(selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL),actionButton("go", "Generate pathway with pathview")),
+                 mainPanel(
+                   bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
+                 )
                )
-
-                
+               # ),
+               # sidebarLayout(
+               #   sidebarPanel(uiOutput('current_pathways'),actionButton("go", "Generate pathway")),
+               #   mainPanel(
+               #     bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
+               #   )
+               # )
                ), # tabPanel("Pathway Enrichment"
 
 
