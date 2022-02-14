@@ -84,7 +84,7 @@ shinyUI(dashboardPage(
   dashboardSidebar(
     width = 250,
     sidebarMenu(id="tabs",
-                fileInput("file1", "Choose CSV File",
+                fileInput("file1", h4("Choose CSV File"),
                           accept = c(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -98,7 +98,7 @@ shinyUI(dashboardPage(
                 ),
                 
                 selectInput( "espece",
-                  label = h4("choose organism:"),
+                  label = h4("Choose organism:"),
                   choices = list(
                                   "Human (org.Hs.eg.db)"="org.Hs.eg.db",
                                   "Mouse (org.Mm.eg.db)"="org.Mm.eg.db",
@@ -192,9 +192,10 @@ shinyUI(dashboardPage(
                
                box(title = "MA Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
                    plotlyOutput("MAPlot_plotly",  height = "450px")
-               ) #fin box
+               ), #fin box
                
-
+               box (dataTableOutput("Table_subset_data_selected"), 
+                    width = 12)
             
              
       ), # tabPanel("Whole Data Analysis"
@@ -253,10 +254,7 @@ shinyUI(dashboardPage(
                ),
               
                
-               br(),
-                              
-               box (dataTableOutput("Table_go_enrichment"), 
-                    width = 12)
+               br()
                
  
       ), # tabPanel("GO Term Enrichm:qent"
@@ -359,7 +357,72 @@ shinyUI(dashboardPage(
 
       
       
-      tabPanel("Protein Domain Enrichment", "text"
+
+      tabPanel("Protein Domain Enrichment",
+                
+               br(),
+               
+               h1("Protein Domain Enrichment"), 
+               
+               br(),
+               
+               
+               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,
+                   box(
+                     radioGroupButtons("method", label = h4("Analysis method"),
+                                       choices = list(
+                                         "Over epresentation analysis (ORA)" = 1, 
+                                         "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                       direction = "vertical"),
+                     width = 4
+                   ),
+                   
+                   box (                   
+                     sliderInput(inputId = "pvalue_domains",
+                                 label = h4("Select a adjusted p-value cutoff"),
+                                 min = 0,
+                                 max = 0.25,
+                                 value = 0.05),
+                     width = 4),
+                   
+                   box(
+                     radioGroupButtons("type", label = h4("DEG type:"), 
+                                       choices = list(
+                                         "Over expressed DEG only" = 1, 
+                                         "Under expressed DEG only" = 2, 
+                                         "Both" = 3), 
+                                       direction = "vertical"),
+                     width = 4
+                   ),
+                   
+                   box(
+
+                     textInput("biomart_listMarts", label = h4("biomart_listMarts"), value = "ensembl"),
+                     width = 4
+                   ),
+                   
+                   box(
+                     textInput("biomart_dataset", label = h4("biomart_dataset"), value = "mmusculus_gene_ensembl" ),
+                     width = 4
+                   ),
+                   
+                   box(
+                     actionButton("Run_protein_domains",h4("Run Protein Domains")),
+                     width = 4
+                   )
+               ),
+               
+               
+               br(),
+               
+               box (dataTableOutput("Table_domains_enrichment"), 
+                    width = 12),
+               
+               box(
+                 title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                 plotlyOutput("barplot_domains_enrichment", height = "450px")
+               ),
+                   
       ) # tabPanel("Protein Domain Enrichment"
       
       
