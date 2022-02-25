@@ -223,34 +223,48 @@ biomart_dataset <- reactive({
 
     # Annotation Table
     
-    annot <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
-      data <- re() 
-      orga = input$espece
-      generef = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=orga)
-    })
+    # a$espece
+    #  ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organnot <- eventReactive(input$Run_Annotation, {
+    #   data <- re() 
+    #   gene_list = data$ID                 
+    #   organism = input$espece
+    #   generef = bitr(gene_list, fromType = "ENSEMBL", toType= "ENTREZID", OrgDb=organism)
+    # })
     
-    kegg_data <- reactive({
-      df <- re()
-      ids <- annot()
+    kegg_data <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
+      data <- re() 
+      #ids = annot()
+      organism = espece()
+      ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organism)
       dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
       
-      df2 = df[df$ID %in% dedup_ids$ENSEMBL,]
+      df2 = data[data$ID %in% dedup_ids$ENSEMBL,]
       
       # Create a new column in df2 with the corresponding ENTREZ IDs
       df2$Y = dedup_ids$ENTREZID
       
       # Create a vector of the gene unuiverse
       kegg_gene_list <- df2$log2FC
-      
+
       # Name vector with ENTREZ ids
       names(kegg_gene_list) <- df2$Y
-      
       # omit any NA values 
       kegg_gene_list<-na.omit(kegg_gene_list)
       # sort the list in decreasing order (required for clusterProfiler)
       kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
+      # if (input$type == 1){
+      #   #kegg_gene_list <- names(kegg_gene_list)[abs(kegg_gene_list) > 0]
+      #   deg_list <- kegg_gene_list[kegg_gene_list > 0]
+      # }
+      # else if(input$type == 2) {
+      #   deg_list <- kegg_gene_list[kegg_gene_list < 0]
+      # }
+      # else {
+      #   deg_list <- kegg_gene_list
+      # }
       list(kegg_gene_list=kegg_gene_list, df2=df2)
     })
+    
    
     gse_kegg <- reactive({
       gse_kegg_data <- kegg_data()
@@ -268,26 +282,24 @@ biomart_dataset <- reactive({
     
     ora_kegg <- reactive({
       ora_kegg_data <- kegg_data()
-      
       # Exctract significant results from df2
       kegg_sig_genes_df = subset(ora_kegg_data$df2, padj < 0.05)
-      
+
       # From significant results, we want to filter on log2fold change
-      
+
       kegg_genes <- kegg_sig_genes_df$log2FC
-      
+
       # Name the vector with the CONVERTED ID!
       names(kegg_genes) <- kegg_sig_genes_df$Y
-      
+
       # omit NA values
       kegg_genes <- na.omit(kegg_genes)
-      
-      # filter on log2fold change (PARAMETER)
+      # filter on log2fold change (under or over expressed DEG)
       if (input$type == 1){
-        kegg_genes <- names(kegg_genes)[abs(kegg_genes) > 0]
+        kegg_genes <- names(kegg_genes)[kegg_genes > 0]
       }
       else if(input$type == 2) {
-        kegg_genes <- names(kegg_genes)[abs(kegg_genes) < 0]
+        kegg_genes <- names(kegg_genes)[kegg_genes < 0]
       }
        kk <- enrichKEGG(gene=kegg_genes, universe=names(ora_kegg_data$kegg_gene_list),organism='mmu', pvalueCutoff = input$pvalue_gsea, keyType = "ncbi-geneid")
     })
@@ -304,17 +316,6 @@ biomart_dataset <- reactive({
       DT::datatable(data.df)
     })#fin renderDataTable
     
-    
-    # output$current_pathways <- renderUI({
-    #   if (input$method == 1){
-    #     data <- ora_kegg()
-    #   }
-    #   else {
-    #     data <- gse_kegg()
-    #   }
-    #   selectInput("paths", label = h4("Choose path"),choices =data$Description,selected = NULL)
-    # })
-
      output$dotplot_kegg <- renderPlotly({
        if(input$method == 1){
          result_kegg <- ora_kegg()
@@ -347,10 +348,11 @@ biomart_dataset <- reactive({
        }
        kegg_data <- kegg_data()
        path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
-       # browser()
-       # path_id<-result_kegg$ID[1]
+
+       # Make and save picture of pathway with pathview
        pathview(cpd.data=kegg_data$kegg_gene_list, pathway.id=path_id, species = "mmu")
        path_img<-paste("./",path_id,".png", sep="")
+       # Return picture path to load it on popup window
        list(src = path_img)
      }, deleteFile = TRUE)
 
