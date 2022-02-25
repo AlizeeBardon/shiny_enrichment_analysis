@@ -16,7 +16,7 @@ organism = "org.Mm.eg.db"
 #BiocManager::install(organism, character.only = TRUE) 
 library(organism, character.only = TRUE) 
 library(org.Mm.eg.db)
-
+library(DOSE)
 library(clusterProfiler) 
 library(biomaRt)
 library(pathview)
@@ -28,11 +28,11 @@ library(plotly)
 library(highcharter)
 library(DT)
 library(ggplot2)
-
+library(enrichplot)
 
 
 # Define server 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
 
 ######################################################################### 
 ###### input data    
@@ -168,106 +168,136 @@ re <- reactive({
     # -------------------------------------------------------------------
     # BODY: tabPanel :GO Term Enrichment --------------------------------
     # -------------------------------------------------------------------
+    ####################################################
+    ### GSEA pour GO
+    #####################################################
     
-    output$Table_go_enrichment <- renderDataTable({
-      resOrdered <- re()
+    goGse_annot<-reactive({
+      # reading in data
+      go <- re()
       
-      # get the interest list
-      # genes considered DE with treshold alpha = 0.05 
-      GeneList = resOrdered[which(resOrdered$padj<=0.05),]$ID
-      GeneList = data.frame(Gene = GeneList)
-      head(GeneList)
-      tail(GeneList)
+      # we want the log2 fold change
+      original_gene_list <- go$log2FC
       
-      # get gene annotation (for all genes)
-      genes = resOrdered$ID
-      GeneRef =  bitr(genes, fromType="ENSEMBL", toType="GO", OrgDb="org.Mm.eg.db")
-      filtre_annotation = input$filtre_annotation
-      GeneRef <- subset(GeneRef, ONTOLOGY == filtre_annotation)
-      head(GeneRef)
+      # name the vector
+      names(original_gene_list) <- go$ID
       
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
       
-      #################################################
-      #  prepare data for enrichment                  #
-      #################################################
-      get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
-        # reference list
-        # m : nb of annotated genes in the reference list (for each term)
-        m = table(GeneRef$GO)
-        # n : nb of non annotated genes in the reference list
-        n = length(unique(GeneRef$ENSEMBL)) - m
-        
-        # experience (interest list)
-        # x : nb of annotated genes in the interest list
-        experience = merge(GeneList, GeneRef, by.x = "Gene", by.y = "ENSEMBL")
-        x = table(factor(experience$GO, rownames(m)))
-        # k : total nb of genes in the interest list
-        k = length(unique(GeneList$Gene))
-        
-        Term = unique(GeneRef$GO)
-        x = as.numeric(x)
-        m = as.numeric(m)
-        k = as.numeric(k)
-        n = as.numeric(n)
-        
-        return(list(Term = Term, 
-                    x = x, 
-                    k = k, 
-                    m = m, 
-                    n = n))
-      }
-      Gene.Bg.ratio = get_Gene_and_Bg_ratio(GeneList = GeneList, GeneRef = GeneRef)
-      Bg.ratio = signif(100 * Gene.Bg.ratio$m/(Gene.Bg.ratio$m + Gene.Bg.ratio$n), 3)
-      Gene.ratio = signif(100 * Gene.Bg.ratio$x / Gene.Bg.ratio$k, 3)
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list <- sort(gene_list, decreasing=TRUE)
       
       
+      gse <- gseGO(geneList=gene_list, 
+                   ont ="BP", 
+                   keyType = 'ENSEMBL', 
+                   pvalueCutoff = 0.05, 
+                   verbose = TRUE, 
+                   OrgDb = "org.Mm.eg.db", 
+                   pAdjustMethod = "none")
+    })
+    
+    output$goGse_annot_table <- renderDataTable({
+      data <- goGse_annot()
+      updateSelectInput(session, "paths", choices = data$Description)
+      data.df <- as.data.frame(data)
+      DT::datatable(data.df)
+    })#fin renderDataTable 
+  
+    output$dotplot <-renderPlotly({
+      gse<-goGse_annot()
+      require(DOSE)
+      dotplot(gse, showCategory = 7, title = "gsea dotplot" , split=".sign") + facet_grid(.~.sign)
+    })
+
+    output$ridgeplot <-renderPlotly({
+      gse<-goGse_annot()
+      ridgeplot(gse, showCategory = 7)
+    })
+    
+    output$gsea_plot <-renderPlotly({
+      gse<-goGse_annot()
+      gseaplot(gse, by = "all", title = gse$Description[1], geneSetID = 1)
+    })
+
+    ####################################################
+    ### ORA pour GO
+    #####################################################
+    goGse_enrich<-reactive({
       
-      #################################################
-      #  hypergeometric test                          #
-      #################################################
-      hypergeom_test = function(x, k, m, n){
-        # calculate p-value and adjusted p-value
-        pvalue = phyper(x-1,m,n,k,lower.tail=FALSE)
-        padj = p.adjust(pvalue, n=length((pvalue)))
-        
-        return (list(pvalue = pvalue, padj = padj))
-      }
-      res_hypergeom_test = hypergeom_test(x = Gene.Bg.ratio$x, 
-                                          k = Gene.Bg.ratio$k,
-                                          m = Gene.Bg.ratio$m, 
-                                          n = Gene.Bg.ratio$n)
+      # reading in data
+      go <- re()
       
-      #################################################
-      #  create results table                         #
-      #################################################
-      create_table_enrichment = function(GeneList, GeneRef){
-        # call function get_Gene_and_Bg_ratio() to get BgRatio and GeneRatio 
-        Gene.Bg.ratio = get_Gene_and_Bg_ratio(GeneList = GeneList, GeneRef = GeneRef)
-        Bg.ratio = signif(100 * Gene.Bg.ratio$m/(Gene.Bg.ratio$m + Gene.Bg.ratio$n), 3)
-        Gene.ratio = signif(100 * Gene.Bg.ratio$x / Gene.Bg.ratio$k, 3)
-        
-        # call function hypergeom_test to get p-value and adjusted p-value
-        test = hypergeom_test(x = Gene.Bg.ratio$x, 
-                              k = Gene.Bg.ratio$k,
-                              m = Gene.Bg.ratio$m, 
-                              n = Gene.Bg.ratio$n)
-        
-        # create dataframe
-        table.enrich = data.frame(Term = Gene.Bg.ratio$Term, 
-                                  GeneRatio = Gene.ratio, 
-                                  BgRatio = Bg.ratio,
-                                  pval = test$pvalue, 
-                                  padj = test$padj, 
-                                  count = Gene.Bg.ratio$x)
-        
-        return (table.enrich[order(table.enrich$pval), ])
-      }
-      res.enrich.hypergeom.GO = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
-      res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),]
+      # we want the log2 fold change 
+      original_gene_list <- df$log2FC
       
-      DT::datatable(res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),])
+      # name the vector
+      names(original_gene_list) <- df$ID
       
-    })#fin renderDataTable
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
+      
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list = sort(gene_list, decreasing = TRUE)
+      
+      head(gene_list)
+      # Exctract significant results (padj < 0.05)
+      sig_genes_df = subset(df, padj < 0.05)
+      
+      # From significant results, we want to filter on log2fold change
+      genes <- sig_genes_df$log2FC
+      
+      # Name the vector
+      names(genes) <- sig_genes_df$ID
+      
+      # omit NA values
+      genes <- na.omit(genes)
+      
+      genes <- names(genes)
+      
+      go_enrich <- enrichGO(gene = genes,
+                            universe = names(gene_list),
+                            OrgDb = "org.Mm.eg.db", 
+                            keyType = 'ENSEMBL',
+                            readable = T,
+                            ont = "BP",
+                            pvalueCutoff = 0.05, 
+                            qvalueCutoff = 0.10)
+    })
+    
+    output$goGse_enrich_table <- renderDataTable({
+      data <- goGse_enrich()
+      updateSelectInput(session,"paths", choices = data$Description)
+      data.df <- as.data.frame(data)
+      DT::datatable(data.df)
+    })#fin renderDataTable 
+    
+    output$barplot <-renderPlotly({
+      gse<-goGse_enrich()
+      barplot(gse, showCategory = 7)+ ggtitle("barplot for SEA")
+    })
+    
+    output$dotplot_sea <-renderPlotly({
+      gse<-goGse_enrich()
+      dotplot(gse, showCategory = 7)+ ggtitle("barplot for SEA")
+    })
+    
+    output$usetplot <-renderPlotly({
+      gse<-goGse_enrich()
+      upsetplot(gse, n=2)+ ggtitle("usetplot for SEA")
+    })
+    
+    output$goplot <-renderPlotly({
+      gse<-goGse_enrich()
+      goplot(go_enrich, 
+             #drop = TRUE, 
+             showCategory = 6, #nombre de pathway à afficher
+             #title = "GO Biological Pathways",
+             font.size = 8,
+             split=".sign")
+    })
+
     
     } # end function(input, output) {
 ) # end shinyServer(

@@ -193,43 +193,78 @@ shinyUI(dashboardPage(
       # BODY: tabPanel : GO Term Enrichment --------------------------------
       
       tabPanel("GO Term Enrichment", 
-               
-               br(),
-               
-               h1("GO Term Enrichment"), 
-               
-               br(),
-               
-               
-               selectInput( "filtre_annotation",
-                            label = h4("choose organism:"),
-                            choices = list(
-                              "BP"="BP",
-                              "CC"="CC",
-                              "MF"="MF",
-                              "all"=""
-                            )
+               h1("Go Term Enrichment"),
+               box(
+                 selectInput( "Ontology",
+                              label = h4("choose ontology:"),
+                              choices = c(
+                                "BP"="BP",
+                                "CC"="CC",
+                                "MF"="MF",
+                                "all"=""
+                              ),
+                              selected = "BP"),
+                 
+                 width = 4
                ),
+               box(
+               selectInput( "Ajustement",
+                            label = h4("choose ajustement method:"),
+                            choices = c("holm", "hochberg", 
+                                        "hommel", "bonferroni", 
+                                        "BH", "BY", "fdr", 
+                                        "none"), 
+                            selected = "none"),
+               width = 4
+               
+               
+               
+               
+            ),#fin box
+            
+            box(
+              numericInput("showCategory_enrichmap", "number of categories to show", value = 5),
+              width = 4
               
-                            
-               br(),
-                              
-               box (dataTableOutput("Table_go_enrichment"), 
-                    width = 12),
-               
-               br(),
-               
+            ),#fin box
+            
+            box(title = "Dot Plot GSEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                
+                plotlyOutput("dotplot",  height = "500px")
+            ),#fin box
+            
+            box(title = "ridge Plot GSEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                
+                plotlyOutput("ridgeplot",  height = "500px")
+            ),#fin box
+            
+            box(title = "gsea Plot", status = "warning", solidHeader = TRUE, width = 12, height = "1000px",
+                
+                plotlyOutput("gsea_plot",  height = "900px")
+            ),#fin box
+            
+            box (dataTableOutput("goGse_annot_table"), width = 12, style = "overflow-x: scroll;"),
+            
+            box(title = "Bar Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                
+                plotlyOutput("barplot",  height = "500px")
+            ),#fin box
+            box(title = "Dot Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                
+                plotlyOutput("dotplot_sea",  height = "500px")
+            ),#fin box
+            box(title = "upsetplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                
+                plotlyOutput("usetplot",  height = "500px")
+            ),#fin box
 
-	       fluidRow(
-                        tabBox(
-                          title = "First tabBox",
-                          # The id lets us use input$tabset1 on the server to find the current tab
-                          id = "tabset1", height = "250px",
-                          tabPanel("Tab1", "First tab content"),
-                          tabPanel("Tab2", "Tab content 2")
-                        )
-               ) #fluidrow
- 
+            box(title = "goplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                
+                plotlyOutput("goplot",  height = "500px")
+            ),#fin box
+            box (dataTableOutput("goGse_enrich_table"), width = 12, style = "overflow-x: scroll;"),
+
+            
       ), # tabPanel("GO Term Enrichm:qent"
       
       
