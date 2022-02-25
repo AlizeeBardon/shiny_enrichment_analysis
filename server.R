@@ -223,13 +223,22 @@ biomart_dataset <- reactive({
 
     # Annotation Table
     
+    # a$espece
+    #  ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organnot <- eventReactive(input$Run_Annotation, {
+    #   data <- re() 
+    #   gene_list = data$ID                 
+    #   organism = input$espece
+    #   generef = bitr(gene_list, fromType = "ENSEMBL", toType= "ENTREZID", OrgDb=organism)
+    # })
+    
     kegg_data <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
       data <- re() 
-      orga = input$espece
-      generef = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=orga)
+      #ids = annot()
+      organism = espece()
+      ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organism)
       dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
       
-      df2 = df[df$ID %in% dedup_ids$ENSEMBL,]
+      df2 = data[data$ID %in% dedup_ids$ENSEMBL,]
       
       # Create a new column in df2 with the corresponding ENTREZ IDs
       df2$Y = dedup_ids$ENTREZID
@@ -332,14 +341,16 @@ biomart_dataset <- reactive({
 
      output$pathview_kegg <- renderImage({
        if (input$method == 1){
-         result_kegg <- ora_kegg()
+         result_kegg <- ora_kegg
        }
        else {
          result_kegg <- gse_kegg()
        }
+       kegg_data <- kegg_data()
        path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
-       # Make and save picture of pathway with pathview  
-       pathview(cpd.data=kegg_gene_list, pathway.id=path_id, species = "mmu")
+
+       # Make and save picture of pathway with pathview
+       pathview(cpd.data=kegg_data$kegg_gene_list, pathway.id=path_id, species = "mmu")
        path_img<-paste("./",path_id,".png", sep="")
        # Return picture path to load it on popup window
        list(src = path_img)
