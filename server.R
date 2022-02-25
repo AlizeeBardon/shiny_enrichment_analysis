@@ -285,7 +285,6 @@ biomart_dataset <- reactive({
 
       # omit NA values
       kegg_genes <- na.omit(kegg_genes)
-      browser()
       # filter on log2fold change (under or over expressed DEG)
       if (input$type == 1){
         kegg_genes <- names(kegg_genes)[kegg_genes > 0]
