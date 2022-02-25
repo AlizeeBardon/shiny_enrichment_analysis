@@ -340,15 +340,16 @@ biomart_dataset <- reactive({
 
      output$pathview_kegg <- renderImage({
        if (input$method == 1){
-         result_kegg <- ora_kegg()
+         result_kegg <- ora_kegg
        }
        else {
          result_kegg <- gse_kegg()
        }
+       kegg_data <- kegg_data()
        path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
        # browser()
        # path_id<-result_kegg$ID[1]
-       pathview(cpd.data=kegg_gene_list, pathway.id=path_id, species = "mmu")
+       pathview(cpd.data=kegg_data$kegg_gene_list, pathway.id=path_id, species = "mmu")
        path_img<-paste("./",path_id,".png", sep="")
        list(src = path_img)
      }, deleteFile = TRUE)
