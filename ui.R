@@ -165,6 +165,10 @@ shinyUI(dashboardPage(
                
                br(),
                
+               # img(src = "DNA.png", height = 72, width = 72),
+               
+               br(),
+               
                box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,
                    
                    box (                   

@@ -233,7 +233,6 @@ biomart_dataset <- reactive({
     
     kegg_data <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
       data <- re() 
-      #ids = annot()
       organism = espece()
       ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organism)
       dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
@@ -276,7 +275,6 @@ biomart_dataset <- reactive({
                           pvalueCutoff = input$pvalue_gsea,
                           pAdjustMethod = "none",
                           keyType       = "ncbi-geneid")
-
     })
      
     
@@ -341,7 +339,7 @@ biomart_dataset <- reactive({
 
      output$pathview_kegg <- renderImage({
        if (input$method == 1){
-         result_kegg <- ora_kegg
+         result_kegg <- ora_kegg()
        }
        else {
          result_kegg <- gse_kegg()
