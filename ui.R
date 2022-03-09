@@ -133,8 +133,6 @@ shinyUI(dashboardPage(
                   "Annotation Information ?",
                   h5("Make sure you select the ", br(), "species that matches  your dataset"),
                   h5("If it is not in the list, we advise", br(), " to choose the most phylogenetically ", br(), "related species")
-
-
                 ) #menuItem
 
                 
@@ -160,7 +158,7 @@ shinyUI(dashboardPage(
       tabPanel("Whole Data Analysis",
             
                br(),
-
+               img(src = "dodo.gif", height = 50),
                h1("whole Data Analysis"), 
                
                br(),
