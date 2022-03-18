@@ -9,7 +9,7 @@
 #BiocManager::install("pathview")
 #BiocManager::install("pasilla") 
 #BiocManager::install("biomaRt")
-  
+#BiocManager::install("AnnotationForge")
 
 organism = "org.Hs.eg.db" 
 #BiocManager::install(organism, character.only = TRUE) 
