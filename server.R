@@ -11,10 +11,11 @@
 #BiocManager::install("biomaRt")
 #BiocManager::install("AnnotationForge")
 
-organism = "org.Hs.eg.db" 
-#BiocManager::install(organism, character.only = TRUE) 
-library(organism, character.only = TRUE) 
-library(org.Mm.eg.db)
+# #organism = "org.Hs.eg.db" 
+# #BiocManager::install(organism, character.only = TRUE) 
+# library(organism, character.only = TRUE) 
+# library(org.Mm.eg.db)
+
 library(clusterProfiler) 
 library(biomaRt)
 library(pathview)
@@ -215,21 +216,141 @@ biomart_dataset <- reactive({
     # -------------------------------------------------------------------
          
     
+    ####################################################
+    ### GSEA pour GO
+    #####################################################
     
+    goGse_annot<-reactive({
+      # reading in data
+      go <- re()
+      
+      # we want the log2 fold change
+      original_gene_list <- go$log2FC
+      
+      # name the vector
+      names(original_gene_list) <- go$ID
+      
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
+      
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list <- sort(gene_list, decreasing=TRUE)
+      
+      
+      gse <- gseGO(geneList=gene_list, 
+                   ont ="BP", 
+                   keyType = 'ENSEMBL', 
+                   pvalueCutoff = 0.05, 
+                   verbose = TRUE, 
+                   OrgDb = "org.Mm.eg.db", 
+                   pAdjustMethod = "none")
+    })
+    
+    output$goGse_annot_table <- renderDataTable({
+      data <- goGse_annot()
+      updateSelectInput(session, "paths", choices = data$Description)
+      data.df <- as.data.frame(data)
+      DT::datatable(data.df)
+    })#fin renderDataTable 
+    
+    output$dotplot <-renderPlotly({
+      gse<-goGse_annot()
+      require(DOSE)
+      dotplot(gse, showCategory = 7, title = "gsea dotplot" , split=".sign") + facet_grid(.~.sign)
+    })
+    
+    output$ridgeplot <-renderPlotly({
+      gse<-goGse_annot()
+      ridgeplot(gse, showCategory = 7)
+    })
+    
+    output$gsea_plot <-renderPlotly({
+      gse<-goGse_annot()
+      gseaplot(gse, by = "all", title = gse$Description[1], geneSetID = 1)
+    })
+    
+    ####################################################
+    ### ORA pour GO
+    #####################################################
+    goGse_enrich<-reactive({
+      
+      # reading in data
+      go <- re()
+      
+      # we want the log2 fold change 
+      original_gene_list <- df$log2FC
+      
+      # name the vector
+      names(original_gene_list) <- df$ID
+      
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
+      
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list = sort(gene_list, decreasing = TRUE)
+      
+      head(gene_list)
+      # Exctract significant results (padj < 0.05)
+      sig_genes_df = subset(df, padj < 0.05)
+      
+      # From significant results, we want to filter on log2fold change
+      genes <- sig_genes_df$log2FC
+      
+      # Name the vector
+      names(genes) <- sig_genes_df$ID
+      
+      # omit NA values
+      genes <- na.omit(genes)
+      
+      genes <- names(genes)
+      
+      go_enrich <- enrichGO(gene = genes,
+                            universe = names(gene_list),
+                            OrgDb = "org.Mm.eg.db", 
+                            keyType = 'ENSEMBL',
+                            readable = T,
+                            ont = "BP",
+                            pvalueCutoff = 0.05, 
+                            qvalueCutoff = 0.10)
+    })
+    
+    output$goGse_enrich_table <- renderDataTable({
+      data <- goGse_enrich()
+      updateSelectInput(session,"paths", choices = data$Description)
+      data.df <- as.data.frame(data)
+      DT::datatable(data.df)
+    })#fin renderDataTable 
+    
+    output$barplot <-renderPlotly({
+      gse<-goGse_enrich()
+      barplot(gse, showCategory = 7)+ ggtitle("barplot for SEA")
+    })
+    
+    output$dotplot_sea <-renderPlotly({
+      gse<-goGse_enrich()
+      dotplot(gse, showCategory = 7)+ ggtitle("barplot for SEA")
+    })
+    
+    output$usetplot <-renderPlotly({
+      gse<-goGse_enrich()
+      upsetplot(gse, n=2)+ ggtitle("usetplot for SEA")
+    })
+    
+    output$goplot <-renderPlotly({
+      gse<-goGse_enrich()
+      goplot(go_enrich, 
+             #drop = TRUE, 
+             showCategory = 6, #nombre de pathway à afficher
+             #title = "GO Biological Pathways",
+             font.size = 8,
+             split=".sign")
+    })
     
     # -------------------------------------------------------------------
     # BODY: tabPanel :KEGG --------------------------------
     # -------------------------------------------------------------------
 
     # Annotation Table
-    
-    # a$espece
-    #  ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organnot <- eventReactive(input$Run_Annotation, {
-    #   data <- re() 
-    #   gene_list = data$ID                 
-    #   organism = input$espece
-    #   generef = bitr(gene_list, fromType = "ENSEMBL", toType= "ENTREZID", OrgDb=organism)
-    # })
     
     kegg_data <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
       data <- re() 
@@ -251,16 +372,6 @@ biomart_dataset <- reactive({
       kegg_gene_list<-na.omit(kegg_gene_list)
       # sort the list in decreasing order (required for clusterProfiler)
       kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
-      # if (input$type == 1){
-      #   #kegg_gene_list <- names(kegg_gene_list)[abs(kegg_gene_list) > 0]
-      #   deg_list <- kegg_gene_list[kegg_gene_list > 0]
-      # }
-      # else if(input$type == 2) {
-      #   deg_list <- kegg_gene_list[kegg_gene_list < 0]
-      # }
-      # else {
-      #   deg_list <- kegg_gene_list
-      # }
       list(kegg_gene_list=kegg_gene_list, df2=df2)
     })
     
@@ -336,7 +447,6 @@ biomart_dataset <- reactive({
        }
      })
 
-
      output$pathview_kegg <- renderImage({
        if (input$method == 1){
          result_kegg <- ora_kegg()
@@ -356,7 +466,7 @@ biomart_dataset <- reactive({
 
 
      # -------------------------------------------------------------------
-     # BODY: tabPanel : Protein DOmains   --------------------------------
+     # BODY: tabPanel : Protein Domains   --------------------------------
      # -------------------------------------------------------------------
      
 

@@ -17,7 +17,8 @@ library(plotly)
 library(highcharter)
 library(DT)
 library(shinyBS)
-
+library(ggridges)
+#library(upsetplot)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -141,7 +142,7 @@ shinyUI(dashboardPage(
   
   
   # BODY --------------------------------------------------------------------
-  
+ 
   
   dashboardBody(
 
@@ -149,15 +150,15 @@ shinyUI(dashboardPage(
       tags$link(rel = "stylesheet", type = "text/css", href = "custom_shinyapp.css")
     ),   
     
-    
+    h1('Shiny Enrichment Analyslis'),
     
     tabsetPanel(
       
       # BODY: tabPanel : whole Data Analysis --------------------------------
       
-      tabPanel("Whole Data Analysis",
+      tabPanel("Whole Data Inspection",
             
-               br(),
+               br(),  
                img(src = "dodo.gif", height = 50),
                h1("whole Data Analysis"), 
                
@@ -213,50 +214,77 @@ shinyUI(dashboardPage(
                
                br(),
                
-               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,  
                
-                   box(
-                     radioButtons("radio_filtre_ontology", label = h4("Choose ontology"),
-                                  choices = list(
-                                    "all (BP + CC + MF)" = "all",
-                                    "Biological Process (BP)"= "BP",
-                                    "Cellular Component (CC)"= "CC",
-                                    "Molecular Function (MF)"= "MF"
-                                  ),
-                                  selected = 1),
-                     width = 4
-                   
-                     ),
-                   
-                   box(
-                     h4("pvalue"),
-                     verbatimTextOutput("pvalue_go_enrich"), 
-                     h4("log2FoldChange threshold"),
-                     verbatimTextOutput("log2foldchange_go_enrich"), 
-                     h6("if you want to change the pvalue log2FC threshold, modified the corresponding slider in the Whole Data Analysis part"),
-                     
-                     width = 4
-                   ), 
-                   
-                   box(
-                   
-                     radioButtons("subset_up_down_regulated", label = h4("Expression selection (upregulated or downregulated)"),
-                                choices = list(
-                                  "both up and down regulated" = "both",
-                                  "up regulated (> log2foldchange)"= "up",
-                                  "down regulated (< -log2foldchange)"= "down"
-                                ),
-                                
-                                selected = 1),
-                   width = 4
-                   )
-                   
-               
-                     
+               box(
+                 selectInput( "Ontology",
+                              label = h4("choose ontology:"),
+                              choices = c(
+                                "BP"="BP",
+                                "CC"="CC",
+                                "MF"="MF",
+                                "all"=""
+                              ),
+                              selected = "BP"),
+                 
+                 width = 4
                ),
-              
+               box(
+                 selectInput( "Ajustement",
+                              label = h4("choose ajustement method:"),
+                              choices = c("holm", "hochberg", 
+                                          "hommel", "bonferroni", 
+                                          "BH", "BY", "fdr", 
+                                          "none"), 
+                              selected = "none"),
+                 width = 4
+                 
+                 
+                 
+                 
+               ),#fin box
                
-               br()
+               box(
+                 numericInput("showCategory_enrichmap", "number of categories to show", value = 5),
+                 width = 4
+                 
+               ),#fin box
+               
+               box(title = "Dot Plot GSEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                   
+                   plotlyOutput("dotplot",  height = "500px")
+               ),#fin box
+               
+               box(title = "ridge Plot GSEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                   
+                   plotlyOutput("ridgeplot",  height = "500px")
+               ),#fin box
+               
+               box(title = "gsea Plot", status = "warning", solidHeader = TRUE, width = 12, height = "1000px",
+                   
+                   plotlyOutput("gsea_plot",  height = "900px")
+               ),#fin box
+               
+               box (dataTableOutput("goGse_annot_table"), width = 12, style = "overflow-x: scroll;"),
+               
+               box(title = "Bar Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                   
+                   plotlyOutput("barplot",  height = "500px")
+               ),#fin box
+               box(title = "Dot Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                   
+                   plotlyOutput("dotplot_sea",  height = "500px")
+               ),#fin box
+               box(title = "upsetplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                   
+                   plotlyOutput("usetplot",  height = "500px")
+               ),#fin box
+               
+               box(title = "goplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                   
+                   plotlyOutput("goplot",  height = "500px")
+               ),#fin box
+               box (dataTableOutput("goGse_enrich_table"), width = 12, style = "overflow-x: scroll;"),
+               
                
  
       ), # tabPanel("GO Term Enrichm:qent"
@@ -335,25 +363,13 @@ shinyUI(dashboardPage(
                mainPanel(title = "GSE Plot", status = "warning", solidHeader = TRUE, width = 12, height = "550px",
                    plotlyOutput("method_kegg", height = "450px")
                ),
-
-               
-               
-               # box(title = "Pathview Plot", status = "warning", solidHeader = TRUE, width = 12, height = "550px",
-               #     imageOutput("pathview_kegg", height = "450px")
-               # ),
+              
                sidebarLayout(
                  sidebarPanel(selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL),actionButton("go", "Generate pathway with pathview")),
                  mainPanel(
                    bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
                  )
                )
-               # ),
-               # sidebarLayout(
-               #   sidebarPanel(uiOutput('current_pathways'),actionButton("go", "Generate pathway")),
-               #   mainPanel(
-               #     bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
-               #   )
-               # )
                ), # tabPanel("Pathway Enrichment"
 
 
