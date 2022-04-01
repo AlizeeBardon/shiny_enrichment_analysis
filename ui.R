@@ -387,7 +387,7 @@ shinyUI(dashboardPage(
 
 
       
-      
+      # BODY: tabPanel : Protein Domain Enrichment -------------------------------- 
 
       tabPanel("Protein Domain Enrichment",
                
@@ -396,7 +396,7 @@ shinyUI(dashboardPage(
                br(),
                
                box(
-                 title = "Parameters - Protein Domain Enrichment", 
+                 title = tags$b("Parameters - Protein Domain Enrichment"), 
                  closable = TRUE, 
                  status = "primary",
                  width = 12,
@@ -406,13 +406,13 @@ shinyUI(dashboardPage(
                  br(),
                  
                  column(4,
-                        radioButtons("method", label = h4("Analysis method"),
+                        radioButtons("method_prt_domain", label = h4("Analysis method"),
                                      choices = list(
                                        "Over epresentation analysis (ORA)" = 1, 
                                        "Gene Set Enrichment Analysis (GSEA)" = 2), 
                                      selected = 1),
                         br(),
-                        radioButtons("type", label = h4("DEG type:"),
+                        radioButtons("type_prt_domain", label = h4("DEG type"),
                                      choices = list(
                                        "Over expressed DEG only" = 1, 
                                        "Under expressed DEG only" = 2, 
@@ -420,7 +420,7 @@ shinyUI(dashboardPage(
                                      selected = 1)
                  ),
                  column(4,
-                        textInput("biomart_listMarts", label = h4("BioMart database: "), value = "ensembl"),
+                        textInput("biomart_listMarts", label = h4("BioMart database "), value = "ensembl"),
                         "This must be BioMart databases to which biomaRt can connect to (cf listMarts).",
                         br(),br(),  br(),
                         textInput("biomart_dataset", label = h4("BioMart Dataset"), value = "mmusculus_gene_ensembl" ),
@@ -428,7 +428,7 @@ shinyUI(dashboardPage(
                  ),
                  
                  column(4,
-                        sliderInput(inputId = "pvalue_domains",
+                        sliderInput(inputId = "pvalue_prt_domain",
                                     label = h4("Adjusted p-value cutoff"),
                                     min = 0,
                                     max = 1,
@@ -445,11 +445,14 @@ shinyUI(dashboardPage(
                
                br(),
                
-               box (dataTableOutput("Table_domains_enrichment"), 
+               box (
+                 title = "Protein domain enrichment table", 
+                 status = "primary",
+                 dataTableOutput("Table_domains_enrichment"), 
                     width = 12),
                
                box(
-                 title = "Bar Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
+                 title = "Protein Domain BarPlot", status = "primary", width = 6,
                  plotlyOutput("barplot_domains_enrichment", height = "450px")
                ),
                    

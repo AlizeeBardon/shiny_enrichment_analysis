@@ -482,31 +482,44 @@ biomart_dataset <- reactive({
      # BODY: tabPanel : Protein Domains   --------------------------------
      # -------------------------------------------------------------------
      
-
-     domain_enrichment <-  eventReactive(input$Run_protein_domains, {
+     # Annotation Table
+     
+     Protein_Domains_data <- eventReactive(input$Run_protein_domains, {
        #input data
        resOrdered <- re()
-       pvalue <- pvalue()
-       espece <- espece()
        biomart_dataset <- biomart_dataset()
        biomart_listMarts <- biomart_listMarts()
        
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
-       ensembl = useMart(biomart_listMarts,dataset=biomart_dataset)
+       ensembl =useMart(biomart=biomart_listMarts, 
+                        dataset = biomart_dataset, 
+                        host = "useast.ensembl.org")
+       
        interpro_id <- getBM(
-         attributes=c('interpro', 'ensembl_gene_id'), # namespace_1003 = for go domain
-         filters = 'ensembl_gene_id', #ensembl_gene_id
+         attributes=c('interpro', 'interpro_description', 'ensembl_gene_id'),
+         filters = 'ensembl_gene_id', 
          values = resOrdered$ID, 
          mart = ensembl)
+     })
+     
+
+     domain_enrichment_ORA <-  eventReactive(input$Run_protein_domains, {
+       #input data
+       resOrdered <- re()
+       pvalue <- input$pvalue_prt_domain
+
+       # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
+       interpro_id <- Protein_Domains_data()
        #background
-       GeneRef = interpro_id
+       GeneRef = na.omit(interpro_id)
+       summary(GeneRef)
        
        #liste d'interet
        GeneList = resOrdered[which(resOrdered$padj<=pvalue),]$ID
        GeneList = data.frame(GeneList)
-
+       
        ###  I - prepare data for enrichment      
-
+       
        get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
          # reference list
          # m : nb of annotated genes in the reference list (for each term)
@@ -521,12 +534,14 @@ biomart_dataset <- reactive({
          k = length(unique(GeneList$GeneList))
          
          Term = unique(GeneRef$interpro)
+         interpro_description =unique(GeneRef$interpro_description)
          x = as.numeric(x)
          m = as.numeric(m)
          k = as.numeric(k)
          n = as.numeric(n)
          
          return(list(Term = Term, 
+                     interpro_description = interpro_description,
                      x = x, 
                      k = k, 
                      m = m, 
@@ -534,7 +549,7 @@ biomart_dataset <- reactive({
        }
        
        ###  II -  hypergeometric test                        
-
+       
        hypergeom_test = function(x, k, m, n){
          # calculate p-value and adjusted p-value
          pvalue = phyper(x-1,m,n,k,lower.tail=FALSE)
@@ -557,37 +572,44 @@ biomart_dataset <- reactive({
                                n = Gene.Bg.ratio$n)
          
          # create dataframe
-         table.enrich = data.frame(Term = Gene.Bg.ratio$Term, 
-                                   GeneRatio = Gene.ratio, 
-                                   BgRatio = Bg.ratio,
+         table.enrich = data.frame(interpro_ID = Gene.Bg.ratio$Term, 
                                    pval = test$pvalue, 
-                                   padj = test$padj, 
+                                   padj = test$padj,
+                                   GeneRatio = Gene.ratio, 
+                                   Count = Gene.Bg.ratio$m,
+                                   BgRatio = Bg.ratio,
+                                   interpro_description = Gene.Bg.ratio$interpro_description,
                                    count = Gene.Bg.ratio$x)
          
          return (table.enrich[order(table.enrich$pval), ])
        }
-       res.enrich.hypergeom.GO = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
-       res.enrich.hypergeom.GO[which(res.enrich.hypergeom.GO$padj<0.05),]
-  # /!\ ajouter : interpro description + pourcentage 
+       res.enrich.hypergeom.prt_dommain = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
+       res.enrich.hypergeom.prt_dommain[which(res.enrich.hypergeom.prt_dommain$padj<pvalue),]
        } )  
      
      
      output$Table_domains_enrichment <- renderDataTable({ 
-       D <- domain_enrichment()
+       D <- domain_enrichment_ORA()
        DT::datatable(D) 
      }) # fin renderDataTable({
      
      
      output$barplot_domains_enrichment <- renderPlotly({
-       D <- domain_enrichment()
-       ggplot(data = D, aes(x= count , y = reorder(Term, count)  ) ) +
+       if(input$method_prt_domain == 1){
+         D <- domain_enrichment_ORA()
+       }
+       else {
+         D <- domain_enrichment_ORA()
+       }
+       
+       ggplot(data = D, aes(x= count , y = reorder(interpro_ID, count)  ) ) +
          geom_bar(stat = "identity", aes(fill = padj))  +
          theme(axis.text.x = element_text(
            angle = 90,
            hjust = 1,
            vjust = 0.5
-         ))
-       
+         )) +
+         labs(y = "Protein Domain (Interpro ID)", x = "Count")
      })
      
     
