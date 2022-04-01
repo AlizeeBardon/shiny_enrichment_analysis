@@ -179,16 +179,29 @@ biomart_dataset <- reactive({
     
 
 ### Interactive Table
-
-    output$Table_subset_data_selected <- renderDataTable({ 
+    
+    selected_data <- reactive({
       D <- re() %>%  
         mutate(
           indice = row_number()
         )
       data_selected_from_graph <- event_data("plotly_selected",source = "source1")
       D_subset = subset(D, indice %in%  data_selected_from_graph$key)
-      DT::datatable(D_subset) 
+    })
+    
+    
+    output$Table_subset_data_selected <- renderDataTable({ 
+      D <- selected_data()
+      DT::datatable(D) 
     }) # fin renderDataTable({
+    
+    
+    output$download <- downloadHandler(
+      filename = function(){"selected_data.csv"}, 
+      content = function(fname){
+        write.csv(selected_data(), fname)
+      }
+    )
     
     #surligner la ligne correspondant au point clique sur le graphique
     proxy <- DT::dataTableProxy("Table_subset_data_selected")

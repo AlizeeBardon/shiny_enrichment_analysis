@@ -28,7 +28,7 @@ shinyUI(dashboardPage(
   # HEADER ------------------------------------------------------------------
   
   dashboardHeader(
-    title = span(img(src = "DNA.png", height = 25), "Enrichment Analysis"),
+    title = span(img(src = "cute-daisies.png", height = 25), "Enrichment Analysis"),
     titleWidth = 250,
     dropdownMenu(
       type = "notifications", 
@@ -150,55 +150,63 @@ shinyUI(dashboardPage(
       tags$link(rel = "stylesheet", type = "text/css", href = "custom_shinyapp.css")
     ),   
     
-    h1('Shiny Enrichment Analyslis'),
-    
     tabsetPanel(
       
-      # BODY: tabPanel : whole Data Analysis --------------------------------
+      # BODY: tabPanel : Whole Data Analysis --------------------------------
       
       tabPanel("Whole Data Inspection",
             
-               br(),  
-               img(src = "dodo.gif", height = 50),
-               h1("whole Data Analysis"), 
+               br(), br(),
                
-               br(),
-               
-               # img(src = "DNA.png", height = 72, width = 72),
-               
-               br(),
-               
-               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,
-                   
-                   box (                   
-                     sliderInput(inputId = "pvalue",
-                                 label = "pvalue",
-                                 min = 0,
-                                 max = 0.25,
-                                 value = 0.05),
-                     width = 6),
-                   box (
-                     sliderInput(inputId = "tresholdLog2FoldChange",
+               box(
+                 title = "Parameters - Whole Data Inspection", 
+                 closable = TRUE, 
+                 status = "primary",
+                 width = 12,
+                 solidHeader = FALSE, 
+                 collapsible = TRUE,
+                 box (                   
+                   sliderInput(inputId = "pvalue",
+                               label = "pvalue",
+                               min = 0,
+                               max = 1,
+                               value = 0.05),
+                   width = 6),
+                 box (
+                   sliderInput(inputId = "tresholdLog2FoldChange",
                                label = "treshold for Log2FoldChange",
                                min = 0,
-                               max = 4,
+                               max = 5,
                                step = 0.1 ,
-                               value = 0.4),
-                     width = 6 )
-                     
-               ), # fin box
+                               value = 1),
+                   width = 6 )
+                 
+                 
+               ),
                
                
-               box(title = "Volcano Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
-                    plotlyOutput("volcanoPlot_plotly", height = "450px")
+               box(
+                 title = "Volcano Plot",
+                 status = "primary",
+                 plotlyOutput("volcanoPlot_plotly"),
+                 width = 6
                ), #fin box
                
-               box(title = "MA Plot", status = "warning", solidHeader = TRUE, width = 6, height = "550px",
-                   plotlyOutput("MAPlot_plotly",  height = "450px")
+               box(
+                 title = "MA Plot",
+                 status = "primary",
+                 plotlyOutput("MAPlot_plotly"),
+                 width = 6
                ), #fin box
                
-               box (dataTableOutput("Table_subset_data_selected"), 
-                    width = 12)
+               
+               
+               box (
+                 title = "Selected data",
+                 status = "primary",
+                 dataTableOutput("Table_subset_data_selected"), 
+                 downloadButton('download',"Download"),
+                 width = 12)
             
              
       ), # tabPanel("Whole Data Analysis"
