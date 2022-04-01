@@ -217,45 +217,50 @@ shinyUI(dashboardPage(
       tabPanel("GO Term Enrichment", 
                
                br(),
-               
-               h1("GO Term Enrichment"), 
-               
                br(),
                
-               
                box(
-                 selectInput( "Ontology",
-                              label = h4("choose ontology:"),
-                              choices = c(
-                                "BP"="BP",
-                                "CC"="CC",
-                                "MF"="MF",
-                                "all"=""
-                              ),
-                              selected = "BP"),
+                 title = "Parameters - GO Term Enrichment", 
+                 closable = TRUE, 
+                 status = "primary",
+                 width = 12,
+                 solidHeader = FALSE, 
+                 collapsible = TRUE,
                  
-                 width = 4
+                 box(
+                   selectInput( "Ontology",
+                                label = h4("choose ontology:"),
+                                choices = c(
+                                  "BP"="BP",
+                                  "CC"="CC",
+                                  "MF"="MF",
+                                  "all"=""
+                                ),
+                                selected = "BP"),
+                   
+                   width = 4
+                 ),
+                 box(
+                   selectInput( "Ajustement",
+                                label = h4("choose ajustement method:"),
+                                choices = c("holm", "hochberg", 
+                                            "hommel", "bonferroni", 
+                                            "BH", "BY", "fdr", 
+                                            "none"), 
+                                selected = "none"),
+                   width = 4
+                   
+                   
+                   
+                   
+                 ),#fin box
+                 
+                 box(
+                   numericInput("showCategory_enrichmap", "number of categories to show", value = 5),
+                   width = 4
+                   
+                 ),#fin box
                ),
-               box(
-                 selectInput( "Ajustement",
-                              label = h4("choose ajustement method:"),
-                              choices = c("holm", "hochberg", 
-                                          "hommel", "bonferroni", 
-                                          "BH", "BY", "fdr", 
-                                          "none"), 
-                              selected = "none"),
-                 width = 4
-                 
-                 
-                 
-                 
-               ),#fin box
-               
-               box(
-                 numericInput("showCategory_enrichmap", "number of categories to show", value = 5),
-                 width = 4
-                 
-               ),#fin box
                
                box(title = "Dot Plot GSEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
                    
@@ -302,15 +307,15 @@ shinyUI(dashboardPage(
       
       tabPanel("Pathway Enrichment", 
                
+               br(), br(),
                
-               br(),
-               
-               h1("Pathway Enrichment"), 
-               
-               br(),
-               
-               
-               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,  
+               box(
+                   title = "Parameters - Pathway Enrichment", 
+                   closable = TRUE, 
+                   status = "primary",
+                   width = 12,
+                   solidHeader = FALSE, 
+                   collapsible = TRUE,
                    
                    box(
                      radioGroupButtons("method", label = h3("Analysis method"),
@@ -385,57 +390,56 @@ shinyUI(dashboardPage(
       
 
       tabPanel("Protein Domain Enrichment",
-                
-               br(),
-               
-               h1("Protein Domain Enrichment"), 
                
                br(),
                
+               br(),
                
-               box(title = "Parameters", status = "info", solidHeader = TRUE, width = 12,
-                   box(
-                     radioGroupButtons("method", label = h4("Analysis method"),
-                                       choices = list(
-                                         "Over epresentation analysis (ORA)" = 1, 
-                                         "Gene Set Enrichment Analysis (GSEA)" = 2), 
-                                       direction = "vertical"),
-                     width = 4
-                   ),
-                   
-                   box (                   
-                     sliderInput(inputId = "pvalue_domains",
-                                 label = h4("Select a adjusted p-value cutoff"),
-                                 min = 0,
-                                 max = 0.25,
-                                 value = 0.05),
-                     width = 4),
-                   
-                   box(
-                     radioGroupButtons("type", label = h4("DEG type:"), 
-                                       choices = list(
-                                         "Over expressed DEG only" = 1, 
-                                         "Under expressed DEG only" = 2, 
-                                         "Both" = 3), 
-                                       direction = "vertical"),
-                     width = 4
-                   ),
-                   
-                   box(
-
-                     textInput("biomart_listMarts", label = h4("biomart_listMarts"), value = "ensembl"),
-                     width = 4
-                   ),
-                   
-                   box(
-                     textInput("biomart_dataset", label = h4("biomart_dataset"), value = "mmusculus_gene_ensembl" ),
-                     width = 4
-                   ),
-                   
-                   box(
-                     actionButton("Run_protein_domains",h4("Run Protein Domains")),
-                     width = 4
-                   )
+               box(
+                 title = "Parameters - Protein Domain Enrichment", 
+                 closable = TRUE, 
+                 status = "primary",
+                 width = 12,
+                 solidHeader = FALSE, 
+                 collapsible = TRUE,
+                 
+                 br(),
+                 
+                 column(4,
+                        radioButtons("method", label = h4("Analysis method"),
+                                     choices = list(
+                                       "Over epresentation analysis (ORA)" = 1, 
+                                       "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                     selected = 1),
+                        br(),
+                        radioButtons("type", label = h4("DEG type:"),
+                                     choices = list(
+                                       "Over expressed DEG only" = 1, 
+                                       "Under expressed DEG only" = 2, 
+                                       "Both" = 3),
+                                     selected = 1)
+                 ),
+                 column(4,
+                        textInput("biomart_listMarts", label = h4("BioMart database: "), value = "ensembl"),
+                        "This must be BioMart databases to which biomaRt can connect to (cf listMarts).",
+                        br(),br(),  br(),
+                        textInput("biomart_dataset", label = h4("BioMart Dataset"), value = "mmusculus_gene_ensembl" ),
+                        "Enter a valid BioMart Dataset for the BioMart database (for example, within the Ensembl genes mart every species is a different dataset) "
+                 ),
+                 
+                 column(4,
+                        sliderInput(inputId = "pvalue_domains",
+                                    label = h4("Adjusted p-value cutoff"),
+                                    min = 0,
+                                    max = 1,
+                                    value = 0.05),
+                        "Output parameters for graph creation (thresholding of domains on their adjusted p-value"
+                 ),
+                 
+                 box (
+                   status = "primary",
+                   actionButton("Run_protein_domains",h4("Run Protein Domains")),
+                   width = 12)
                ),
                
                
