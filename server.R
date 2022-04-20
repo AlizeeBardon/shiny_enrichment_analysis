@@ -233,131 +233,12 @@ biomart_dataset <- reactive({
     ### GSEA pour GO
     #####################################################
     
-    goGse_annot<-reactive({
-      # reading in data
-      go <- re()
-      
-      # we want the log2 fold change
-      original_gene_list <- go$log2FC
-      
-      # name the vector
-      names(original_gene_list) <- go$ID
-      
-      # omit any NA values 
-      gene_list<-na.omit(original_gene_list)
-      
-      # sort the list in decreasing order (required for clusterProfiler)
-      gene_list <- sort(gene_list, decreasing=TRUE)
-      
-      
-      gse <- gseGO(geneList=gene_list, 
-                   ont ="BP", 
-                   keyType = 'ENSEMBL', 
-                   pvalueCutoff = 0.05, 
-                   verbose = TRUE, 
-                   OrgDb = "org.Mm.eg.db", 
-                   pAdjustMethod = "none")
-    })
-    
-    output$goGse_annot_table <- renderDataTable({
-      data <- goGse_annot()
-      updateSelectInput(session, "paths", choices = data$Description)
-      data.df <- as.data.frame(data)
-      DT::datatable(data.df)
-    })#fin renderDataTable 
-    
-    output$dotplot <-renderPlotly({
-      gse<-goGse_annot()
-      require(DOSE)
-      dotplot(gse, showCategory = 7, title = "gsea dotplot" , split=".sign") + facet_grid(.~.sign)
-    })
-    
-    output$ridgeplot <-renderPlotly({
-      gse<-goGse_annot()
-      ridgeplot(gse, showCategory = 7)
-    })
-    
-    output$gsea_plot <-renderPlotly({
-      gse<-goGse_annot()
-      gseaplot(gse, by = "all", title = gse$Description[1], geneSetID = 1)
-    })
+
     
     ####################################################
     ### ORA pour GO
     #####################################################
-    goGse_enrich<-reactive({
-      
-      # reading in data
-      go <- re()
-      
-      # we want the log2 fold change 
-      original_gene_list <- df$log2FC
-      
-      # name the vector
-      names(original_gene_list) <- df$ID
-      
-      # omit any NA values 
-      gene_list<-na.omit(original_gene_list)
-      
-      # sort the list in decreasing order (required for clusterProfiler)
-      gene_list = sort(gene_list, decreasing = TRUE)
-      
-      head(gene_list)
-      # Exctract significant results (padj < 0.05)
-      sig_genes_df = subset(df, padj < 0.05)
-      
-      # From significant results, we want to filter on log2fold change
-      genes <- sig_genes_df$log2FC
-      
-      # Name the vector
-      names(genes) <- sig_genes_df$ID
-      
-      # omit NA values
-      genes <- na.omit(genes)
-      
-      genes <- names(genes)
-      
-      go_enrich <- enrichGO(gene = genes,
-                            universe = names(gene_list),
-                            OrgDb = "org.Mm.eg.db", 
-                            keyType = 'ENSEMBL',
-                            readable = T,
-                            ont = "BP",
-                            pvalueCutoff = 0.05, 
-                            qvalueCutoff = 0.10)
-    })
-    
-    output$goGse_enrich_table <- renderDataTable({
-      data <- goGse_enrich()
-      updateSelectInput(session,"paths", choices = data$Description)
-      data.df <- as.data.frame(data)
-      DT::datatable(data.df)
-    })#fin renderDataTable 
-    
-    output$barplot <-renderPlotly({
-      gse<-goGse_enrich()
-      barplot(gse, showCategory = 7)+ ggtitle("barplot for SEA")
-    })
-    
-    output$dotplot_sea <-renderPlotly({
-      gse<-goGse_enrich()
-      dotplot(gse, showCategory = 7)+ ggtitle("barplot for SEA")
-    })
-    
-    output$usetplot <-renderPlotly({
-      gse<-goGse_enrich()
-      upsetplot(gse, n=2)+ ggtitle("usetplot for SEA")
-    })
-    
-    output$goplot <-renderPlotly({
-      gse<-goGse_enrich()
-      goplot(go_enrich, 
-             #drop = TRUE, 
-             showCategory = 6, #nombre de pathway à afficher
-             #title = "GO Biological Pathways",
-             font.size = 8,
-             split=".sign")
-    })
+
     
     # -------------------------------------------------------------------
     # BODY: tabPanel :KEGG --------------------------------
@@ -500,6 +381,13 @@ biomart_dataset <- reactive({
          filters = 'ensembl_gene_id', 
          values = resOrdered$ID, 
          mart = ensembl)
+       
+       #enlever les valeurs manquantes
+       table_TERM2GENE <- cbind(interpro_id$interpro, interpro_id$ensembl_gene_id,interpro_id$interpro_description )
+       colnames(table_TERM2GENE) <- c("interpro", "ensembl_gene_id", 'interpro_description')
+       clean_interpro_to_geneid  <- subset(table_TERM2GENE, table_TERM2GENE[,1] != "")
+       interpro_id <-as.data.frame(clean_interpro_to_geneid)
+       
      })
      
 
@@ -522,10 +410,11 @@ biomart_dataset <- reactive({
        
        get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
          # reference list
-         # m : nb of annotated genes in the reference list (for each term)
+         # m : nb of annotated genes in the reference list (for each term ; background)
          m = table(GeneRef$interpro)
          # n : nb of non annotated genes in the reference list
-         n = length(unique(GeneRef$ensembl_gene_id)) - m
+         # n = length(unique(GeneRef$ensembl_gene_id)) - m # attention il faut enlever le '-m'
+         n = length(unique(GeneRef$ensembl_gene_id))
          # experience (interest list)
          # x : nb of annotated genes in the interest list
          experience = merge(GeneList, GeneRef, by.x = "GeneList", by.y = "ensembl_gene_id")
@@ -575,9 +464,10 @@ biomart_dataset <- reactive({
          table.enrich = data.frame(interpro_ID = Gene.Bg.ratio$Term, 
                                    pval = test$pvalue, 
                                    padj = test$padj,
-                                   GeneRatio = Gene.ratio, 
-                                   Count = Gene.Bg.ratio$m,
-                                   BgRatio = Bg.ratio,
+                                   #GeneRatio = Gene.ratio, 
+                                   GeneRatio = paste0(Gene.ratio, " (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
+                                   #BgRatio = Bg.ratio,
+                                   BgRatio = paste0(Bg.ratio, " (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
                                    interpro_description = Gene.Bg.ratio$interpro_description,
                                    count = Gene.Bg.ratio$x)
          
