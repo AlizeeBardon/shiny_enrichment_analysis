@@ -391,7 +391,7 @@ biomart_dataset <- reactive({
      
 
      ## code fonction ORA 
-     domain_enrichment_ORA <-  eventReactive(input$Run_protein_domains, {
+     domain_enrichment_ORA <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 1){
        #input data
        resOrdered <- re()
        pvalue <- input$pvalue_prt_domain
@@ -451,7 +451,7 @@ biomart_dataset <- reactive({
        hypergeom_test = function(x, k, m, n){
          # calculate p-value and adjusted p-value
          pvalue = phyper(x-1,m,n,k)
-         padj = p.adjust(pvalue, method = 'none', n=length((pvalue)))
+         padj = p.adjust(pvalue, method = 'BH', n=length((pvalue)))
          return (list(pvalue = pvalue, padj = padj))
        }
        
@@ -484,6 +484,7 @@ biomart_dataset <- reactive({
        }
        res.enrich.hypergeom.prt_dommain = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
        res.enrich.hypergeom.prt_dommain[which(res.enrich.hypergeom.prt_dommain$padj<pvalue),]
+       
        } )  
      
      ## avec la fonction enricher (a titre de comparaison)
@@ -527,19 +528,16 @@ biomart_dataset <- reactive({
      output$barplot_domains_enrichment <- renderPlotly({
        if(input$method_prt_domain == 1){
          D <- domain_enrichment_ORA()
+         ggplot(data = D, aes(x= count , y = reorder(interpro_ID, count)  ) ) +
+           geom_bar(stat = "identity", aes(fill = padj))  +
+           theme(axis.text.x = element_text(
+             angle = 90,
+             hjust = 1,
+             vjust = 0.5
+           )) +
+           labs(y = "Protein Domain (Interpro ID)", x = "Count")
        }
-       else {
-         D <- domain_enrichment_ORA()
-       }
-       
-       ggplot(data = D, aes(x= count , y = reorder(interpro_ID, count)  ) ) +
-         geom_bar(stat = "identity", aes(fill = padj))  +
-         theme(axis.text.x = element_text(
-           angle = 90,
-           hjust = 1,
-           vjust = 0.5
-         )) +
-         labs(y = "Protein Domain (Interpro ID)", x = "Count")
+
      })
      
     
