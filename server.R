@@ -363,8 +363,7 @@ biomart_dataset <- reactive({
      # BODY: tabPanel : Protein Domains   --------------------------------
      # -------------------------------------------------------------------
      
-     # Annotation Table
-     
+     ## recuperation des annotations
      Protein_Domains_data <- eventReactive(input$Run_protein_domains, {
        #input data
        resOrdered <- re()
@@ -391,6 +390,7 @@ biomart_dataset <- reactive({
      })
      
 
+     ## code fonction ORA 
      domain_enrichment_ORA <-  eventReactive(input$Run_protein_domains, {
        #input data
        resOrdered <- re()
@@ -409,21 +409,30 @@ biomart_dataset <- reactive({
        ###  I - prepare data for enrichment      
        
        get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
-         # reference list
-         # m : nb of annotated genes in the reference list (for each term ; background)
-         m = table(GeneRef$interpro)
-         # n : nb of non annotated genes in the reference list
-         # n = length(unique(GeneRef$ensembl_gene_id)) - m # attention il faut enlever le '-m'
-         n = length(unique(GeneRef$ensembl_gene_id))
          # experience (interest list)
-         # x : nb of annotated genes in the interest list
          experience = merge(GeneList, GeneRef, by.x = "GeneList", by.y = "ensembl_gene_id")
-         x = table(factor(experience$interpro, rownames(m)))
-         # k : total nb of genes in the interest list
-         k = length(unique(GeneList$GeneList))
+
+         x = table(factor(experience$interpro))
          
-         Term = unique(GeneRef$interpro)
-         interpro_description =unique(GeneRef$interpro_description)
+         # reference list
+         #interpro en commun entre background et liste d'intéret
+         #il faut créer un liste avec que les id de la liste d'interret, pas la peine de compter les autres
+         interpro_liste_int = merge(experience, GeneRef[1:2], by.x = "interpro", by.y = "interpro")
+         head(interpro_liste_int)
+         # m : nb of annotated genes in the reference list (for each term)
+         m = table(interpro_liste_int$interpro)
+         head(m)
+         # n : nb of non annotated genes in the reference list
+         n = length(unique(GeneRef$ensembl_gene_id))
+         n
+         # x : nb of annotated genes in the interest list
+         
+         # k : total nb of genes in the interest list
+         k = length(GeneList$GeneList)
+         k
+         
+         Term = unique(interpro_liste_int$interpro)
+         interpro_description =unique(interpro_liste_int$interpro_description)
          x = as.numeric(x)
          m = as.numeric(m)
          k = as.numeric(k)
@@ -437,16 +446,16 @@ biomart_dataset <- reactive({
                      n = n))
        }
        
-       ###  II -  hypergeometric test                        
+       #  II -  hypergeometric test                        
        
        hypergeom_test = function(x, k, m, n){
          # calculate p-value and adjusted p-value
-         pvalue = phyper(x-1,m,n,k,lower.tail=FALSE)
-         padj = p.adjust(pvalue, n=length((pvalue)))
+         pvalue = phyper(x-1,m,n,k)
+         padj = p.adjust(pvalue, method = 'none', n=length((pvalue)))
          return (list(pvalue = pvalue, padj = padj))
        }
        
-       ### III - create results table                        
+       # III - create results table                        
        
        create_table_enrichment = function(GeneList, GeneRef){
          # call function get_Gene_and_Bg_ratio() to get BgRatio and GeneRatio 
@@ -477,12 +486,43 @@ biomart_dataset <- reactive({
        res.enrich.hypergeom.prt_dommain[which(res.enrich.hypergeom.prt_dommain$padj<pvalue),]
        } )  
      
+     ## avec la fonction enricher (a titre de comparaison)
+     domain_enrichment_ORA_enricher <-  eventReactive(input$Run_protein_domains, {
+       #input data
+       resOrdered <- re()
+       pvalue <- input$pvalue_prt_domain
+       
+       # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
+       interpro_id <- Protein_Domains_data()
+       table_TERM2GENE = interpro_id[,1:2]
+       
+       gene_list_enricher = resOrdered[which(resOrdered$padj<=pvalue),]$ID
+       
+       result_enricher <- enricher(
+         gene = unique(gene_list_enricher), 
+         pvalueCutoff = 0.05, 
+         pAdjustMethod = "BH", 
+         universe = unique(resOrdered$ID), 
+         minGSSize = 10, 
+         maxGSSize = 500, 
+         qvalueCutoff = 0.2, 
+         TERM2GENE =table_TERM2GENE, 
+         TERM2NAME = NA)
+       })
+     
+     
      
      output$Table_domains_enrichment <- renderDataTable({ 
        D <- domain_enrichment_ORA()
+       head(D)
        DT::datatable(D) 
      }) # fin renderDataTable({
      
+     output$Table_domains_enrichment_enricher <- renderDataTable({ 
+       result_enricher <- domain_enrichment_ORA_enricher()
+       D <- as.data.frame(result_enricher)[c(1, 3:7,9)]
+       DT::datatable(D) 
+     }) # fin renderDataTable({
      
      output$barplot_domains_enrichment <- renderPlotly({
        if(input$method_prt_domain == 1){

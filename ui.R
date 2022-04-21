@@ -375,6 +375,12 @@ shinyUI(dashboardPage(
                  dataTableOutput("Table_domains_enrichment"), 
                     width = 12),
                
+               box (
+                 title = "Protein domain enrichment table using enricher (from clusterProfiler)", 
+                 status = "primary",
+                 dataTableOutput("Table_domains_enrichment_enricher"), 
+                 width = 12),
+               
                box(
                  title = "Protein Domain BarPlot", status = "primary", width = 6,
                  plotlyOutput("barplot_domains_enrichment", height = "450px")
