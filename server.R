@@ -372,8 +372,9 @@ biomart_dataset <- reactive({
        
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        ensembl =useMart(biomart=biomart_listMarts, 
-                        dataset = biomart_dataset, 
-                        host = "useast.ensembl.org")
+                        dataset = biomart_dataset 
+                        #host = "useast.ensembl.org"
+                        )
        
        interpro_id <- getBM(
          attributes=c('interpro', 'interpro_description', 'ensembl_gene_id'),
@@ -488,9 +489,10 @@ biomart_dataset <- reactive({
        } )  
      
      ## avec la fonction enricher (a titre de comparaison)
-     domain_enrichment_ORA_enricher <-  eventReactive(input$Run_protein_domains, {
+     domain_enrichment_ORA_enricher <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 1){
        #input data
        resOrdered <- re()
+       
        pvalue <- input$pvalue_prt_domain
        
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
@@ -511,21 +513,51 @@ biomart_dataset <- reactive({
          TERM2NAME = NA)
        })
      
+
+     domain_enrichment_GSEA <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 2){
+       #input data
+       resOrdered <- re()
+       
+       pvalue <- input$pvalue_prt_domain
+       
+       # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
+       interpro_id <- Protein_Domains_data()
+       table_TERM2GENE = interpro_id[,1:2]
+       
+       # we want the log2 fold change 
+       original_gene_list <- resOrdered$log2FC
+       # name the vector
+       names(original_gene_list) <- resOrdered$ID
+       # omit any NA values 
+       gene_list<-na.omit(original_gene_list)
+       # sort the list in decreasing order (required for clusterProfiler)
+       gene_list = sort(gene_list, decreasing = TRUE)
+       
+       result_GSEA = GSEA(
+         geneList =gene_list,
+         exponent = 1,
+         minGSSize = 10,
+         maxGSSize = 500,
+         pvalueCutoff = pvalue,
+         pAdjustMethod = "BH",
+         TERM2GENE=table_TERM2GENE)
+     })
      
      
-     output$Table_domains_enrichment <- renderDataTable({ 
+     
+     output$Table_domains_enrichment <- renderDataTable( if(input$method_prt_domain == 1){ 
        D <- domain_enrichment_ORA()
        head(D)
        DT::datatable(D) 
      }) # fin renderDataTable({
      
-     output$Table_domains_enrichment_enricher <- renderDataTable({ 
+     output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
        result_enricher <- domain_enrichment_ORA_enricher()
        D <- as.data.frame(result_enricher)[c(1, 3:7,9)]
        DT::datatable(D) 
      }) # fin renderDataTable({
      
-     output$barplot_domains_enrichment <- renderPlotly({
+     output$barplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
        if(input$method_prt_domain == 1){
          D <- domain_enrichment_ORA()
          ggplot(data = D, aes(x= count , y = reorder(interpro_ID, count)  ) ) +
@@ -539,6 +571,13 @@ biomart_dataset <- reactive({
        }
 
      })
+     
+     output$Table_domain_enrichment_GSEA <- renderDataTable( if(input$method_prt_domain == 2){ 
+       result_GSEA <- domain_enrichment_GSEA()
+       D <- as.data.frame(result_GSEA)[c(1, 3:7,9)]
+       DT::datatable(D) 
+     }) # fin renderDataTable({
+     
      
     
     } # end function(input, output) {

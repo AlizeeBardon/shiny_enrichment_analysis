@@ -370,10 +370,13 @@ shinyUI(dashboardPage(
                br(),
                
                box (
-                 title = "Protein domain enrichment table", 
+                 title = "Over Represented Analisys - coded method ", 
                  status = "primary",
+                 "Protein Enrichment Table :",
                  dataTableOutput("Table_domains_enrichment"), 
-                    width = 12),
+                 "Barplot :",
+                 plotlyOutput("barplot_domains_enrichment"),
+                 width = 12),
                
                box (
                  title = "Protein domain enrichment table using enricher (from clusterProfiler)", 
@@ -382,9 +385,11 @@ shinyUI(dashboardPage(
                  width = 12),
                
                box(
-                 title = "Protein Domain BarPlot", status = "primary", width = 6,
-                 plotlyOutput("barplot_domains_enrichment", height = "450px")
-               ),
+                 title = "GSEA (from clusterProfiler)", 
+                 status = "primary",
+                 dataTableOutput("Table_domain_enrichment_GSEA"), 
+                 width = 12
+               )
                    
       ) # tabPanel("Protein Domain Enrichment"
       
