@@ -329,8 +329,8 @@ shinyUI(dashboardPage(
                  
                  br(),
                  
-                 column(4,
-                        radioButtons("method_prt_domain", label = h4("Analysis method"),
+                 column(4, 
+                        radioButtons("method_prt_domain", label = h4("Analysis method"), 
                                      choices = list(
                                        "Over epresentation analysis (ORA)" = 1, 
                                        "Gene Set Enrichment Analysis (GSEA)" = 2), 
@@ -368,26 +368,36 @@ shinyUI(dashboardPage(
                ),
                
                
-               br(), br(), br(),
+               br(), br(), br(), 
                
                
                conditionalPanel(
                  condition = "input.method_prt_domain == 1",
-                 br(), br(),
-                 h1("Over Represented Analisys - coded method "),
-                 
-                 br(), br(),
+                
+                 h1(strong("Over-representation (or enrichment) analysis - coded method (github link)"), align = "center"),
+
+                 br(), 
+                 h2("Protein domain enrichment - Result table"),
                  dataTableOutput("Table_domains_enrichment"), 
                  br(), br(),
+                 h2("Protein domain enrichment - BarPlot"),
                  plotlyOutput("barplot_domains_enrichment"),
                  br(), br(),
+                 tags$hr(style="border-color: purple;"),hr(),
+                 tags$hr(style="border-color: purple;"),hr(),
                  
-                 hr(), br(), br(),
-                 h1("Over Represented Analisys - from clusterProfiler (just for comparison)"),
+                 tags$hr(style="border-color: purple;"),hr(),
+                 br(), br(),
+                 
+                 h1( strong("Over-representation (or enrichment) analysis - using the GSEA() function from clusterProfiler "), align = "center"),
+                 br(),
+                 h2("Protein domain enrichment - Result table"),
                  dataTableOutput("Table_domains_enrichment_enricher"), 
-                 "Barplot :",
+                 br(),
+                 h2("Protein domain enrichment - BarPlot"),
                  plotlyOutput("barplot_domains_enrichment_enricher"),
-                 "DotPlot :",
+                 br(),
+                 h2("Protein domain enrichment - DotPlot"),
                  plotlyOutput("dotplot_domains_enrichment_enricher")
                  
                ),
@@ -395,8 +405,8 @@ shinyUI(dashboardPage(
                
                conditionalPanel(
                  condition = "input.method_prt_domain == 2",
-                 
-                 h1("GSEA - from clusterProfiler "),
+                 h1(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method "), align = "center"),
+
                  
                  br(), br(),
                  dataTableOutput("Table_domain_enrichment_GSEA"), 
