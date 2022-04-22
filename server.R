@@ -550,12 +550,7 @@ biomart_dataset <- reactive({
        head(D)
        DT::datatable(D) 
      }) # fin renderDataTable({
-     
-     output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
-       result_enricher <- domain_enrichment_ORA_enricher()
-       D <- as.data.frame(result_enricher)[c(1, 3:7,9)]
-       DT::datatable(D) 
-     }) # fin renderDataTable({
+
      
      output$barplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
        if(input$method_prt_domain == 1){
@@ -572,13 +567,44 @@ biomart_dataset <- reactive({
 
      })
      
-     output$Table_domain_enrichment_GSEA <- renderDataTable( if(input$method_prt_domain == 2){ 
-       result_GSEA <- domain_enrichment_GSEA()
-       D <- as.data.frame(result_GSEA)[c(1, 3:7,9)]
+     
+     output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
+       result_enricher <- domain_enrichment_ORA_enricher()
+       D <- as.data.frame(result_enricher)[c(1, 3:7,9)]
        DT::datatable(D) 
      }) # fin renderDataTable({
      
      
+     output$dotplot_domains_enrichment_enricher <- renderPlotly( if(input$method_prt_domain == 1){ 
+       result_ORA_enricher <- domain_enrichment_ORA_enricher()
+       dotplot(result_ORA_enricher)
+     }) # fin renderDataTable({
+     
+     output$barplot_domains_enrichment_enricher <- renderPlotly( if(input$method_prt_domain == 1){ 
+       result_ORA_enricher <- domain_enrichment_ORA_enricher()
+       barplot(result_ORA_enricher)
+     }) # fin renderDataTable({
+     
+     
+     output$Table_domain_enrichment_GSEA <- renderDataTable( if(input$method_prt_domain == 2){ 
+       result_GSEA <- domain_enrichment_GSEA()
+       D <- as.data.frame(result_GSEA)[c(1, 3:7,9)]
+       
+       updateSelectInput(session, "protein_id_list", choices = D$ID)
+       DT::datatable(D)
+     }) # fin renderDataTable({
+     
+     output$barplot_domain_enrichment_GSEA <- renderPlotly( if(input$method_prt_domain == 2){ 
+       result_GSEA <- domain_enrichment_GSEA()
+       dotplot(result_GSEA)
+       }) # fin renderDataTable({
     
+     output$gseaplot_domain_enrichment_GSEA <- renderPlotly( if(input$method_prt_domain == 2){ 
+       result_GSEA <- domain_enrichment_GSEA()
+       gseaplot(result_GSEA, input$protein_id_list)
+     }) # fin renderDataTable({
+     
+     
+     
     } # end function(input, output) {
 ) # end shinyServer(

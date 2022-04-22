@@ -359,6 +359,7 @@ shinyUI(dashboardPage(
                                     value = 0.05),
                         "Output parameters for graph creation (thresholding of domains on their adjusted p-value"
                  ),
+
                  
                  box (
                    status = "primary",
@@ -367,29 +368,59 @@ shinyUI(dashboardPage(
                ),
                
                
-               br(),
+               br(), br(), br(),
                
-               box (
-                 title = "Over Represented Analisys - coded method ", 
-                 status = "primary",
-                 "Protein Enrichment Table :",
+               
+               conditionalPanel(
+                 condition = "input.method_prt_domain == 1",
+                 br(), br(),
+                 h1("Over Represented Analisys - coded method "),
+                 
+                 br(), br(),
                  dataTableOutput("Table_domains_enrichment"), 
-                 "Barplot :",
+                 br(), br(),
                  plotlyOutput("barplot_domains_enrichment"),
-                 width = 12),
-               
-               box (
-                 title = "Protein domain enrichment table using enricher (from clusterProfiler)", 
-                 status = "primary",
+                 br(), br(),
+                 
+                 hr(), br(), br(),
+                 h1("Over Represented Analisys - from clusterProfiler (just for comparison)"),
                  dataTableOutput("Table_domains_enrichment_enricher"), 
-                 width = 12),
+                 "Barplot :",
+                 plotlyOutput("barplot_domains_enrichment_enricher"),
+                 "DotPlot :",
+                 plotlyOutput("dotplot_domains_enrichment_enricher")
+                 
+               ),
                
-               box(
-                 title = "GSEA (from clusterProfiler)", 
-                 status = "primary",
+               
+               conditionalPanel(
+                 condition = "input.method_prt_domain == 2",
+                 
+                 h1("GSEA - from clusterProfiler "),
+                 
+                 br(), br(),
                  dataTableOutput("Table_domain_enrichment_GSEA"), 
-                 width = 12
-               )
+                 br(), br(),
+                 
+                 "Barplot :",
+                 plotlyOutput("barplot_domain_enrichment_GSEA"),
+                 
+                 br(), br(),
+
+                     
+                 selectInput(
+                       "protein_id_list", 
+                       label = h4("choose the protein id to display"),
+                       choices = "",
+                       selected = NULL),
+
+                 
+                 br(), br(),
+                 plotlyOutput("gseaplot_domain_enrichment_GSEA")
+               )  
+               
+
+               
                    
       ) # tabPanel("Protein Domain Enrichment"
       
