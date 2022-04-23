@@ -214,11 +214,8 @@ shinyUI(dashboardPage(
       
       # BODY: tabPanel : GO Term Enrichment --------------------------------
       
-      tabPanel("GO Term Enrichment", 
-               
-               br(),
-               br(),
-               
+      tabPanel("GO Term Enrichment",
+      
                box(
                  title = "Parameters - GO Term Enrichment", 
                  closable = TRUE, 
@@ -226,82 +223,9 @@ shinyUI(dashboardPage(
                  width = 12,
                  solidHeader = FALSE, 
                  collapsible = TRUE,
-                 
-                 box(
-                   selectInput( "Ontology",
-                                label = h4("choose ontology:"),
-                                choices = c(
-                                  "BP"="BP",
-                                  "CC"="CC",
-                                  "MF"="MF",
-                                  "all"=""
-                                ),
-                                selected = "BP"),
-                   
-                   width = 4
-                 ),
-                 box(
-                   selectInput( "Ajustement",
-                                label = h4("choose ajustement method:"),
-                                choices = c("holm", "hochberg", 
-                                            "hommel", "bonferroni", 
-                                            "BH", "BY", "fdr", 
-                                            "none"), 
-                                selected = "none"),
-                   width = 4
-                   
-                   
-                   
-                   
-                 ),#fin box
-                 
-                 box(
-                   numericInput("showCategory_enrichmap", "number of categories to show", value = 5),
-                   width = 4
-                   
-                 ),#fin box
-               ),
+               )
                
-               box(title = "Dot Plot GSEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                   
-                   plotlyOutput("dotplot",  height = "500px")
-               ),#fin box
-               
-               box(title = "ridge Plot GSEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                   
-                   plotlyOutput("ridgeplot",  height = "500px")
-               ),#fin box
-               
-               box(title = "gsea Plot", status = "warning", solidHeader = TRUE, width = 12, height = "1000px",
-                   
-                   plotlyOutput("gsea_plot",  height = "900px")
-               ),#fin box
-               
-               box (dataTableOutput("goGse_annot_table"), width = 12, style = "overflow-x: scroll;"),
-               
-               box(title = "Bar Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                   
-                   plotlyOutput("barplot",  height = "500px")
-               ),#fin box
-               box(title = "Dot Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                   
-                   plotlyOutput("dotplot_sea",  height = "500px")
-               ),#fin box
-               box(title = "upsetplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                   
-                   plotlyOutput("usetplot",  height = "500px")
-               ),#fin box
-               
-               box(title = "goplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                   
-                   plotlyOutput("goplot",  height = "500px")
-               ),#fin box
-               box (dataTableOutput("goGse_enrich_table"), width = 12, style = "overflow-x: scroll;"),
-               
-               
- 
-      ), # tabPanel("GO Term Enrichm:qent"
-      
+      ),
 
       # BODY: tabPanel : Pathway Enrichment -------------------------------- 
       
@@ -405,8 +329,8 @@ shinyUI(dashboardPage(
                  
                  br(),
                  
-                 column(4,
-                        radioButtons("method_prt_domain", label = h4("Analysis method"),
+                 column(4, 
+                        radioButtons("method_prt_domain", label = h4("Analysis method"), 
                                      choices = list(
                                        "Over epresentation analysis (ORA)" = 1, 
                                        "Gene Set Enrichment Analysis (GSEA)" = 2), 
@@ -435,6 +359,7 @@ shinyUI(dashboardPage(
                                     value = 0.05),
                         "Output parameters for graph creation (thresholding of domains on their adjusted p-value"
                  ),
+
                  
                  box (
                    status = "primary",
@@ -443,18 +368,69 @@ shinyUI(dashboardPage(
                ),
                
                
-               br(),
+               br(), br(), br(), 
                
-               box (
-                 title = "Protein domain enrichment table", 
-                 status = "primary",
+               
+               conditionalPanel(
+                 condition = "input.method_prt_domain == 1",
+                
+                 h1(strong("Over-representation (or enrichment) analysis - coded method (github link)"), align = "center"),
+
+                 br(), 
+                 h2("Protein domain enrichment - Result table"),
                  dataTableOutput("Table_domains_enrichment"), 
-                    width = 12),
-               
-               box(
-                 title = "Protein Domain BarPlot", status = "primary", width = 6,
-                 plotlyOutput("barplot_domains_enrichment", height = "450px")
+                 br(), br(),
+                 h2("Protein domain enrichment - BarPlot"),
+                 plotlyOutput("barplot_domains_enrichment"),
+                 br(), br(),
+                 tags$hr(style="border-color: purple;"),hr(),
+                 tags$hr(style="border-color: purple;"),hr(),
+                 
+                 tags$hr(style="border-color: purple;"),hr(),
+                 br(), br(),
+                 
+                 h1( strong("Over-representation (or enrichment) analysis - using the GSEA() function from clusterProfiler "), align = "center"),
+                 br(),
+                 h2("Protein domain enrichment - Result table"),
+                 dataTableOutput("Table_domains_enrichment_enricher"), 
+                 br(),
+                 h2("Protein domain enrichment - BarPlot"),
+                 plotlyOutput("barplot_domains_enrichment_enricher"),
+                 br(),
+                 h2("Protein domain enrichment - DotPlot"),
+                 plotlyOutput("dotplot_domains_enrichment_enricher")
+                 
                ),
+               
+               
+               conditionalPanel(
+                 condition = "input.method_prt_domain == 2",
+                 h1(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method "), align = "center"),
+
+                 
+                 br(), br(),
+                 dataTableOutput("Table_domain_enrichment_GSEA"), 
+                 br(), br(),
+                 
+                 "Barplot :",
+                 plotlyOutput("barplot_domain_enrichment_GSEA"),
+                 
+                 br(), br(),
+
+                     
+                 selectInput(
+                       "protein_id_list", 
+                       label = h4("choose the protein id to display"),
+                       choices = "",
+                       selected = NULL),
+
+                 
+                 br(), br(),
+                 plotlyOutput("gseaplot_domain_enrichment_GSEA")
+               )  
+               
+
+               
                    
       ) # tabPanel("Protein Domain Enrichment"
       
