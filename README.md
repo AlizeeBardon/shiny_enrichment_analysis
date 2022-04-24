@@ -5,3 +5,8 @@ This interactive Shiny application aims to facilitate and automate the analysis 
 This project is the result of the work of three students: Alizée, Fiona and Sara.
 
 If you would like to participate in the improvement of the project or if you have any problems, do not hesitate to contact us at the following address: shiny_enrichment_analysis@univ-rouen.fr
+
+
+References 
+
+Yu G, Wang L, Han Y and He Q*. clusterProfiler: an R package for comparing biological themes among gene clusters. OMICS: A Journal of Integrative Biology. 2012, 16(5):284-287.
