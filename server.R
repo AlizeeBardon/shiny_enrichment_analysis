@@ -396,6 +396,8 @@ biomart_dataset <- reactive({
        #input data
        resOrdered <- re()
        pvalue <- input$pvalue_prt_domain
+       
+       adjustment_method <- input$pvalue_adjustment_prt_domain
 
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        interpro_id <- Protein_Domains_data()
@@ -412,28 +414,27 @@ biomart_dataset <- reactive({
        get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
          # experience (interest list)
          experience = merge(GeneList, GeneRef, by.x = "GeneList", by.y = "ensembl_gene_id")
+         head(experience)
+         # x : nb of annotated genes in the interest list
+         x = table(experience$interpro)
 
-         x = table(factor(experience$interpro))
          
          # reference list
          #interpro en commun entre background et liste d'intéret
          #il faut créer un liste avec que les id de la liste d'interret, pas la peine de compter les autres
-         interpro_liste_int = merge(experience, GeneRef[1:2], by.x = "interpro", by.y = "interpro")
-         head(interpro_liste_int)
+         #interpro_liste_int = merge(experience[2:3], GeneRef[1:2], by.x = "interpro", by.y = "interpro")
+         interpro_liste_int = subset(GeneRef, GeneRef$interpro %in% experience$interpro)
          # m : nb of annotated genes in the reference list (for each term)
          m = table(interpro_liste_int$interpro)
-         head(m)
+         
          # n : nb of non annotated genes in the reference list
          n = length(unique(GeneRef$ensembl_gene_id))
-         n
-         # x : nb of annotated genes in the interest list
          
          # k : total nb of genes in the interest list
          k = length(GeneList$GeneList)
-         k
          
-         Term = unique(interpro_liste_int$interpro)
-         interpro_description =unique(interpro_liste_int$interpro_description)
+         Term = unique(row.names(m))
+         interpro_description =unique(interpro_liste_int[match(Term, interpro_liste_int$interpro),]$interpro_description)
          x = as.numeric(x)
          m = as.numeric(m)
          k = as.numeric(k)
@@ -447,13 +448,48 @@ biomart_dataset <- reactive({
                      n = n))
        }
        
+       
        #  II -  hypergeometric test                        
        
        hypergeom_test = function(x, k, m, n){
          # calculate p-value and adjusted p-value
-         pvalue = phyper(x-1,m,n,k)
-         padj = p.adjust(pvalue, method = 'BH', n=length((pvalue)))
-         return (list(pvalue = pvalue, padj = padj))
+         
+         pvalue_fisher.test <- c()
+         
+         if(input$type_prt_domain == "Both" ){ # Test for both
+           for (i in 1:length(x)) {
+             plop = ((fisher.test(matrix(c(x[i], m[i]-x[i], k-x[i], n-(k-x[i])),2,2), alternative='two.sided'))$p.value)
+             pvalue_fisher.test <- c(pvalue_fisher.test, plop)
+           }
+           
+         }
+         
+         # Test for under-representation (depletion)
+         # fisher.test(matrix(c(Overlap, group2-Overlap, group1-Overlap, Total-group2-group1 +Overlap), 2, 2), alternative='less')$p.value
+         # phyper(Overlap, group2, Total-group2, group1, lower.tail= TRUE)
+         # pvalue = phyper(x-1,m,n,k, lower.tail = FALSE)
+         
+         else if(input$type_prt_domain == "Under" ){ # Test for both
+           for (i in 1:length(x)) {
+             plop = ((fisher.test(matrix(c(x[i], m[i]-x[i], k-x[i], n-(k-x[i])),2,2), alternative='less'))$p.value)
+             pvalue_fisher.test <- c(pvalue_fisher.test, plop)
+           }
+           
+         }
+         
+         # Test for over-representation (enrichment)
+         # phyper(Overlap-1, group2, Total-group2, group1,lower.tail= FALSE)
+         # fisher.test(matrix(c(Overlap, group2-Overlap, group1-Overlap, Total-group2-group1 +Overlap), 2, 2), alternative='greater')$p.value
+         else if(input$type_prt_domain == "Over" ){ # Test for both
+           for (i in 1:length(x)) {
+             plop = ((fisher.test(matrix(c(x[i], m[i]-x[i], k-x[i], n-(k-x[i])),2,2), alternative='greater'))$p.value)
+             pvalue_fisher.test <- c(pvalue_fisher.test, plop)
+           }
+           
+         }
+         
+         padj = p.adjust(pvalue_fisher.test, method = adjustment_method, n=length((pvalue_fisher.test)))
+         return (list(pvalue_fisher.test = pvalue_fisher.test, padj = padj))
        }
        
        # III - create results table                        
@@ -472,7 +508,7 @@ biomart_dataset <- reactive({
          
          # create dataframe
          table.enrich = data.frame(interpro_ID = Gene.Bg.ratio$Term, 
-                                   pval = test$pvalue, 
+                                   pvalue_fisher.test = test$pvalue_fisher.test, 
                                    padj = test$padj,
                                    #GeneRatio = Gene.ratio, 
                                    GeneRatio = paste0(Gene.ratio, " (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
@@ -495,6 +531,8 @@ biomart_dataset <- reactive({
        
        pvalue <- input$pvalue_prt_domain
        
+       adjustment_method <- input$pvalue_adjustment_prt_domain
+       
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        interpro_id <- Protein_Domains_data()
        table_TERM2GENE = interpro_id[,1:2]
@@ -504,7 +542,7 @@ biomart_dataset <- reactive({
        result_enricher <- enricher(
          gene = unique(gene_list_enricher), 
          pvalueCutoff = 0.05, 
-         pAdjustMethod = "BH", 
+         pAdjustMethod = adjustment_method, 
          universe = unique(resOrdered$ID), 
          minGSSize = 10, 
          maxGSSize = 500, 
@@ -519,6 +557,8 @@ biomart_dataset <- reactive({
        resOrdered <- re()
        
        pvalue <- input$pvalue_prt_domain
+       
+       adjustment_method <- input$pvalue_adjustment_prt_domain
        
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        interpro_id <- Protein_Domains_data()
@@ -544,19 +584,24 @@ biomart_dataset <- reactive({
      })
      
      
-     
      output$Table_domains_enrichment <- renderDataTable( if(input$method_prt_domain == 1){ 
        D <- domain_enrichment_ORA()
        head(D)
-       DT::datatable(D) 
+       updateSliderInput(session, "nb_barplot_ora_coder", max = nrow(D))
+       DT::datatable(D[,1:6]) 
      }) # fin renderDataTable({
 
      
      output$barplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
        if(input$method_prt_domain == 1){
+         
+         max <- input$nb_barplot_ora_coder
+         
          D <- domain_enrichment_ORA()
-         ggplot(data = D, aes(x= count , y = reorder(interpro_ID, count)  ) ) +
+         ggplot(data = D[1:max,], aes(x= count , y = reorder(interpro_ID, count)  ) ) +
            geom_bar(stat = "identity", aes(fill = padj))  +
+           #geom_bar(stat = "identity", fill = rainbow(n=length(D$padj))) +
+           #scale_color_gradientn(colours = rainbow(5)) +
            theme(axis.text.x = element_text(
              angle = 90,
              hjust = 1,

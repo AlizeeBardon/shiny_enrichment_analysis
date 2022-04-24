@@ -222,7 +222,7 @@ shinyUI(dashboardPage(
                  status = "primary",
                  width = 12,
                  solidHeader = FALSE, 
-                 collapsible = TRUE,
+                 collapsible = TRUE
                )
                
       ),
@@ -327,37 +327,108 @@ shinyUI(dashboardPage(
                  solidHeader = FALSE, 
                  collapsible = TRUE,
                  
+
                  br(),
-                 
+                   
                  column(4, 
-                        radioButtons("method_prt_domain", label = h4("Analysis method"), 
+                        
+                        radioButtons("method_prt_domain", 
+                                     label = h4(
+                                       "Analysis method",
+                                       tipify(actionBttn(
+                                         inputId = "prt5",
+                                         icon = icon("question"),
+                                         style = "jelly",
+                                         size = "xs",
+                                         block = FALSE,
+                                         no_outline = TRUE
+                                       ), "ORA : hypergeom test with BH adjustment", placement="bottom", trigger = "hover") 
+                                     ),
                                      choices = list(
                                        "Over epresentation analysis (ORA)" = 1, 
                                        "Gene Set Enrichment Analysis (GSEA)" = 2), 
                                      selected = 1),
                         br(),
-                        radioButtons("type_prt_domain", label = h4("DEG type"),
+                        radioButtons("type_prt_domain", 
+                                     label = h4("DEG type",
+                                                tipify(actionBttn(
+                                                  inputId = "prt5",
+                                                  icon = icon("question"),
+                                                  style = "jelly",
+                                                  size = "xs",
+                                                  block = FALSE,
+                                                  no_outline = TRUE
+                                                ), "Diffrential Expression Group", placement="bottom", trigger = "hover") 
+                                                ),
                                      choices = list(
-                                       "Over expressed DEG only" = 1, 
-                                       "Under expressed DEG only" = 2, 
-                                       "Both" = 3),
-                                     selected = 1)
+                                       "Both" = "Both",
+                                       "Over expressed DEG only" = "Over", 
+                                       "Under expressed DEG only" = "Under" 
+                                       ),
+                                     selected = NULL)
                  ),
                  column(4,
-                        textInput("biomart_listMarts", label = h4("BioMart database "), value = "ensembl"),
-                        "This must be BioMart databases to which biomaRt can connect to (cf listMarts).",
-                        br(),br(),  br(),
-                        textInput("biomart_dataset", label = h4("BioMart Dataset"), value = "mmusculus_gene_ensembl" ),
-                        "Enter a valid BioMart Dataset for the BioMart database (for example, within the Ensembl genes mart every species is a different dataset) "
+                        textInput("biomart_listMarts", 
+                                  label = h4(
+                                    "BioMart database ",
+                                    tipify(actionBttn(
+                                      inputId = "prt1",
+                                      icon = icon("question"),
+                                      style = "jelly",
+                                      size = "xs",
+                                      block = FALSE,
+                                      no_outline = TRUE
+                                    ), "This must be BioMart databases to which biomaRt can connect to (cf listMarts)", placement="bottom", trigger = "hover") 
+                                    ), value = "ensembl"),
+                        br(),br(),
+                      
+                               
+                        textInput("biomart_dataset", 
+                                  label = h4(
+                                    "BioMart Dataset",
+                                    tipify(actionBttn(
+                                      inputId = "prt2",
+                                      icon = icon("question"),
+                                      style = "jelly",
+                                      size = "xs",
+                                      block = FALSE,
+                                      no_outline = TRUE
+                                    ), "Enter a valid BioMart Dataset for the BioMart database (for example, within the Ensembl genes mart every species is a different dataset)", placement="bottom", trigger = "hover") 
+                                    ), value = "mmusculus_gene_ensembl" )
                  ),
                  
                  column(4,
                         sliderInput(inputId = "pvalue_prt_domain",
-                                    label = h4("Adjusted p-value cutoff"),
+                                    label = h4(
+                                      "Adjusted p-value cutoff",
+                                      tipify(actionBttn(
+                                        inputId = "prt3",
+                                        icon = icon("question"),
+                                        style = "jelly",
+                                        size = "xs",
+                                        block = FALSE,
+                                        no_outline = TRUE
+                                      ), "Output parameters for graph creation (thresholding of domains on their adjusted p-value", placement="bottom", trigger = "hover") 
+                                      ),
                                     min = 0,
                                     max = 1,
                                     value = 0.05),
-                        "Output parameters for graph creation (thresholding of domains on their adjusted p-value"
+                        
+                        selectInput( inputId = "pvalue_adjustment_prt_domain",
+                                     label = h4("Adjustment method:"),
+                                     choices = list(
+                                       'Holm (1979) ("holm")' = "holm", 
+                                       'Hochberg (1988) ("hochberg")' = "hochberg", 
+                                       'Hommel (1988) ("hommel")' = "hommel", 
+                                       'Bonferroni correction ("bonferroni")' = "bonferroni", 
+                                       'Benjamini & Hochberg (1995) ("BH" or its alias "fdr")' = "BH", 
+                                       'Benjamini & Yekutieli (2001) ("BY")' = "BY",
+                                       'none' = "none"
+                                     ),
+                                     selected = NULL
+                        )
+                        
+                        
                  ),
 
                  
@@ -368,33 +439,43 @@ shinyUI(dashboardPage(
                ),
                
                
-               br(), br(), br(), 
+               br(), br(), 
                
                
                conditionalPanel(
                  condition = "input.method_prt_domain == 1",
                 
-                 h1(strong("Over-representation (or enrichment) analysis - coded method (github link)"), align = "center"),
+                 h1(strong("Over-representation (or enrichment) analysis"),  br(),
+                    tags$a(href="https://github.com/AlizeeBardon/shiny_enrichment_analysis","coded method"),
+                    align = "center"),
 
                  br(), 
                  h2("Protein domain enrichment - Result table"),
                  dataTableOutput("Table_domains_enrichment"), 
                  br(), br(),
+                 
+                 
                  h2("Protein domain enrichment - BarPlot"),
+                 sliderInput(inputId = "nb_barplot_ora_coder",
+                             label = h4("number of protein to see in the barplot :"  ),
+                             min = 0,
+                             max = 200,
+                             value = 10),
+                 
                  plotlyOutput("barplot_domains_enrichment"),
                  br(), br(),
-                 tags$hr(style="border-color: purple;"),hr(),
-                 tags$hr(style="border-color: purple;"),hr(),
                  
-                 tags$hr(style="border-color: purple;"),hr(),
-                 br(), br(),
-                 
-                 h1( strong("Over-representation (or enrichment) analysis - using the GSEA() function from clusterProfiler "), align = "center"),
+                 h1( strong("Over-representation (or enrichment) analysis"), 
+                     br(),
+                     tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/GSEA","GSEA() function from clusterProfiler"),
+                     align = "center"),
                  br(),
                  h2("Protein domain enrichment - Result table"),
                  dataTableOutput("Table_domains_enrichment_enricher"), 
                  br(),
                  h2("Protein domain enrichment - BarPlot"),
+                 
+
                  plotlyOutput("barplot_domains_enrichment_enricher"),
                  br(),
                  h2("Protein domain enrichment - DotPlot"),
