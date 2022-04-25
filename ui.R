@@ -178,7 +178,7 @@ shinyUI(dashboardPage(
                                min = 0,
                                max = 5,
                                step = 0.1 ,
-                               value = 1),
+                               value = 0.1),
                    width = 6 )
                  
                  
@@ -198,8 +198,7 @@ shinyUI(dashboardPage(
                  plotlyOutput("MAPlot_plotly"),
                  width = 6
                ), #fin box
-               
-               
+
                
                box (
                  title = "Selected data",
@@ -216,6 +215,8 @@ shinyUI(dashboardPage(
       
       tabPanel("GO Term Enrichment",
       
+               br(), br(),
+               
                box(
                  title = "Parameters - GO Term Enrichment", 
                  closable = TRUE, 
@@ -467,7 +468,7 @@ shinyUI(dashboardPage(
                  
                  h1( strong("Over-representation (or enrichment) analysis"), 
                      br(),
-                     tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/GSEA","GSEA() function from clusterProfiler"),
+                     tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/enricher","enricher() function from clusterProfiler"),
                      align = "center"),
                  br(),
                  h2("Protein domain enrichment - Result table"),
@@ -486,7 +487,10 @@ shinyUI(dashboardPage(
                
                conditionalPanel(
                  condition = "input.method_prt_domain == 2",
-                 h1(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method "), align = "center"),
+                 h1(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method "), 
+                    br(), 
+                    tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/GSEA","GSEA() function from clusterProfiler"),
+                    align = "center"),
 
                  
                  br(), br(),
