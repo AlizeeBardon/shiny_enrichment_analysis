@@ -249,6 +249,7 @@ biomart_dataset <- reactive({
     kegg_data <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
       data <- re() 
       organism = espece()
+      adj_method <- input$kegg_adj_method
       ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organism)
       dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
       
@@ -266,7 +267,7 @@ biomart_dataset <- reactive({
       kegg_gene_list<-na.omit(kegg_gene_list)
       # sort the list in decreasing order (required for clusterProfiler)
       kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
-      list(kegg_gene_list=kegg_gene_list, df2=df2)
+      list(kegg_gene_list=kegg_gene_list, df2=df2, adj_method=adj_method)
     })
     
    
@@ -278,7 +279,7 @@ biomart_dataset <- reactive({
                           minGSSize    = 3,
                           maxGSSize    = 800,
                           pvalueCutoff = input$pvalue_gsea,
-                          pAdjustMethod = "none",
+                          pAdjustMethod = gse_kegg_data$adj_method,
                           keyType       = "ncbi-geneid")
     })
      
@@ -304,7 +305,10 @@ biomart_dataset <- reactive({
       else if(input$type == 2) {
         kegg_genes <- names(kegg_genes)[kegg_genes < 0]
       }
-       kk <- enrichKEGG(gene=kegg_genes, universe=names(ora_kegg_data$kegg_gene_list),organism='mmu', pvalueCutoff = input$pvalue_gsea, keyType = "ncbi-geneid")
+      else {
+        kegg_genes <- names(kegg_genes)
+      }
+       kk <- enrichKEGG(gene=kegg_genes, universe=names(ora_kegg_data$kegg_gene_list),organism='mmu', pvalueCutoff = input$pvalue_gsea, keyType = "ncbi-geneid", pAdjustMethod = ora_kegg_data$adj_method)
     })
     
     output$enrichKEGG_table <- renderDataTable({
