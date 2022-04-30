@@ -25,6 +25,7 @@ shinyUI(dashboardPage(
   skin = "purple",
   title = "Enrichment Analysis",
   
+  
   # HEADER ------------------------------------------------------------------
   
   dashboardHeader(
@@ -85,7 +86,8 @@ shinyUI(dashboardPage(
   dashboardSidebar(
     width = 250,
     sidebarMenu(id="tabs",
-                fileInput("file1", h4("Choose CSV File"),
+                fileInput("file1", 
+                          h4("Choose CSV File"),
                           accept = c(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -93,7 +95,9 @@ shinyUI(dashboardPage(
                 ),
 
                 menuItem(
-                  "need any help to import your data ?",
+                 "",
+                  icon = icon("question"),
+                 "need any help to import your data ?",
                   h5("please choose a .csv document"),
                   h5("the document must be composed ", br(), " of 6 columns(GeneName, ID, baseMean, ", br(), " log2FC, pval, padj)")
                 ),
