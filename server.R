@@ -42,10 +42,10 @@ re <- reactive({
       file <- input$file1
       ext <- tools::file_ext(file$datapath)
       req(file)
-      print(head(file))
       validate(need(ext == "csv", "Invalid file. Please upload a .csv file"))
       #list_df <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
       data <- read.csv(file$datapath, header = TRUE, sep = ";") 
+      data <- na.omit(data)
       required_columns <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
       column_names <- colnames(data)
       min_columns <- 6
@@ -94,10 +94,14 @@ biomart_dataset <- reactive({
 })
 
 data_pour_plot <- reactive({
-  df <- re()
-  
+  df_brut <- re()
+
+  df <- na.omit(df_brut)
+
   pvalue <- pvalue()
+  
   pvalue_log10 <- -log10(pvalue)
+  
   tresholdlog2foldchange <- tresholdLog2FoldChange()
   
   df$key <- row.names(df)
@@ -131,7 +135,8 @@ data_pour_plot <- reactive({
         # volcanoPlot using ggplot and plotly
         p <- ggplot(
           data = data_plot_plotly, 
-          mapping = aes(x = log2FC, y=-log10(padj), gene= GeneName, ID= ID, col=diffexpressed, key = key)) +
+          #mapping = aes(x = log2FC, y=-log10(padj), gene= GeneName, ID= ID, col=diffexpressed, key = key)) +
+          mapping = aes(x = log2FC, y=-log10(padj), col=diffexpressed, key = key)) +
           geom_point(size = 0.45) + 
           theme_bw()  + 
           scale_color_manual(values=c("red", "black", "green")) +
@@ -167,7 +172,8 @@ data_pour_plot <- reactive({
       p <- ggplot(
         data = df, 
         mapping = aes(
-          x = log2(baseMean), y = log2FC, gene= GeneName, ID= ID, col=diffexpressed, key = key)) +
+          #x = log2(baseMean), y = log2FC, gene= GeneName, ID= ID, col=diffexpressed, key = key)) +
+          x = log2(baseMean), y = log2FC, col=diffexpressed, key = key)) +
         geom_point(size = 0.45)+ 
         theme_bw()  +
         scale_color_manual(values=c("red", "black", "green")) +
@@ -190,7 +196,7 @@ data_pour_plot <- reactive({
 ### Interactive Table
     
     selected_data <- reactive({
-      D <- re() %>%  
+      D <- data_pour_plot() %>%  
         mutate(
           indice = row_number()
         )
@@ -215,7 +221,7 @@ data_pour_plot <- reactive({
     #surligner la ligne correspondant au point clique sur le graphique
     proxy <- DT::dataTableProxy("Table_subset_data_selected")
     observe({
-      data <- re()
+      data <- data_pour_plot()
       subset_data <- data.frame(
         ID_test = data$ID,
         row_id = 1:length(data$ID),
@@ -511,10 +517,10 @@ data_pour_plot <- reactive({
          table.enrich = data.frame(interpro_ID = Gene.Bg.ratio$Term, 
                                    pvalue_fisher.test = test$pvalue_fisher.test, 
                                    padj = test$padj,
-                                   #GeneRatio = Gene.ratio, 
-                                   GeneRatio = paste0(Gene.ratio, " (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
-                                   #BgRatio = Bg.ratio,
-                                   BgRatio = paste0(Bg.ratio, " (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
+                                   GeneRatio = Gene.ratio, 
+                                   GR_detail = paste0(" (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
+                                   BgRatio = Bg.ratio,
+                                   BgR_detail = paste0(" (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
                                    interpro_description = Gene.Bg.ratio$interpro_description,
                                    count = Gene.Bg.ratio$x)
          
@@ -594,25 +600,45 @@ data_pour_plot <- reactive({
 
      
      output$barplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
-       if(input$method_prt_domain == 1){
          
          max <- input$nb_barplot_ora_coder
          
          D <- domain_enrichment_ORA()
          ggplot(data = D[1:max,], aes(x= count , y = reorder(interpro_ID, count)  ) ) +
            geom_bar(stat = "identity", aes(fill = padj))  +
-           #geom_bar(stat = "identity", fill = rainbow(n=length(D$padj))) +
-           #scale_color_gradientn(colours = rainbow(5)) +
+           scale_fill_viridis_c(option = 'magma') +
            theme(axis.text.x = element_text(
              angle = 90,
              hjust = 1,
              vjust = 0.5
            )) +
            labs(y = "Protein Domain (Interpro ID)", x = "Count")
-       }
 
      })
      
+
+     output$dotplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
+         max <- input$nb_barplot_ora_coder
+         D <- domain_enrichment_ORA()
+
+         ggplot(D[1:max,], aes(x=interpro_ID, y=GeneRatio)) +
+           geom_point(stat='identity', aes(col=padj, size=count), alpha=0.75) +   # Draw points
+           scale_colour_viridis_c(option = 'magma') +
+           geom_segment(aes(x=interpro_ID,
+                            xend=interpro_ID,
+                            y=min(GeneRatio),
+                            yend=max(GeneRatio)
+                            ),
+                        linetype="none",
+                        size=0.1) +   # Draw dashed lines
+           labs(x="Protein Domain",
+                y=" Genre Ratio",
+                title = "Dotplot",
+                fill="padj") +
+           coord_flip()
+
+     })
+
      
      output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
        result_enricher <- domain_enrichment_ORA_enricher()

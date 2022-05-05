@@ -18,6 +18,7 @@ library(highcharter)
 library(DT)
 library(shinyBS)
 library(ggridges)
+library(viridis)
 #library(upsetplot)
 
 # Define UI for application that draws a histogram
@@ -456,7 +457,11 @@ shinyUI(dashboardPage(
 
                  br(), 
                  h2("Protein domain enrichment - Result table"),
-                 dataTableOutput("Table_domains_enrichment"), 
+                 box (
+                   dataTableOutput("Table_domains_enrichment"),
+                   width = 12),
+                 
+                  
                  br(), br(),
                  
                  
@@ -467,7 +472,21 @@ shinyUI(dashboardPage(
                              max = 200,
                              value = 10),
                  
-                 plotlyOutput("barplot_domains_enrichment"),
+
+                 
+                 
+
+                 box (
+                   plotlyOutput("barplot_domains_enrichment"),
+                   width = 6),
+                 box (
+                   plotlyOutput("dotplot_domains_enrichment"),
+                   width = 6),
+                 
+                 
+                 br(), br(),
+                 
+                 
                  br(), br(),
                  
                  h1( strong("Over-representation (or enrichment) analysis"), 
