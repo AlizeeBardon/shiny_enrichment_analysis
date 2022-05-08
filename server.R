@@ -38,12 +38,23 @@ shinyServer(function(input, output, session) {
 ###### input data    
 #########################################################################
 
+ex_data <- reactive({
+  data <- read.csv("www/exemple.csv")
+  req(data)
+  })
+  
+output$download_exemple <- downloadHandler(
+  filename = function(){"exemple.csv"},
+  content = function(fname){
+    write.csv(ex_data(), fname)
+  }
+)
+  
 re <- reactive({
       file <- input$file1
       ext <- tools::file_ext(file$datapath)
       req(file)
       validate(need(ext == "csv", "Invalid file. Please upload a .csv file"))
-      #list_df <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
       data <- read.csv(file$datapath, header = TRUE, sep = ";") 
       data <- na.omit(data)
       required_columns <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
@@ -93,8 +104,7 @@ biomart_dataset <- reactive({
   req(biomart_dataset)
 })
 
-#domain_enrichment_ORA_enricher <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 1){
-#eventReactive(input$Run_protein_domains,
+
 data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
   df_brut <- re()
   df <- na.omit(df_brut)
@@ -115,6 +125,14 @@ data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
   req(df)
 })
 
+table_DEG_data <- reactive({
+  D <- data_pour_plot()  
+  pvalue <- pvalue()
+  tresholdlog2foldchange <- tresholdLog2FoldChange()
+  DEG = D[which(D$padj<=pvalue & abs(D$log2FC)> tresholdlog2foldchange ),]
+  req(DEG)
+})
+
 
 
     # BODY --------------------------------------------------------------------
@@ -128,7 +146,6 @@ data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
         data_plot_plotly <- data_pour_plot()
         pvalue <- pvalue()
         tresholdlog2foldchange <- tresholdLog2FoldChange()
-
 
         # volcanoPlot using ggplot and plotly
         p <- ggplot(
@@ -204,15 +221,11 @@ data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
 
     output$Table_whole_data <- renderDataTable({ 
       D <- data_pour_plot()
-
       DT::datatable(D) 
     }) # fin renderDataTable({
     
     output$Table_DEG <- renderDataTable({ 
-      D <- data_pour_plot()
-      pvalue <- pvalue()
-      tresholdlog2foldchange <- tresholdLog2FoldChange()
-      DEG = D[which(D$padj<=pvalue & abs(D$log2FC)> tresholdlog2foldchange ),]
+      DEG <- table_DEG_data()
       DT::datatable(DEG) 
     }) # fin renderDataTable({
     
@@ -224,7 +237,7 @@ data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
     output$download_Table_DEG <- downloadHandler(
       filename = function(){"DEG.csv"}, 
       content = function(fname){
-        write.csv(DEG(), fname)
+        write.csv(table_DEG_data(), fname)
       }
     )
     
@@ -659,7 +672,20 @@ data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
            coord_flip()
 
      })
-
+     
+     
+     output$piechart_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
+       D <- domain_enrichment_ORA()
+       data <- D[,c('interpro_ID', 'count')]
+       
+       fig <- plot_ly(data, labels = ~interpro_ID, values = ~count, type = 'pie')
+       fig <- fig %>% layout(title = 'United States Personal Expenditures by Categories in 1960',
+                             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+       
+       fig
+       
+     })
      
      output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
        result_enricher <- domain_enrichment_ORA_enricher()

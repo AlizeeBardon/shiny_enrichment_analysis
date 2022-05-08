@@ -23,7 +23,7 @@ library(viridis)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
-  skin = "purple",
+  skin = "green",
   title = "Enrichment Analysis",
   
   
@@ -88,20 +88,37 @@ shinyUI(dashboardPage(
     width = 250,
     sidebarMenu(id="tabs",
                 fileInput("file1", 
-                          h4("Choose CSV File"),
+                          label = h4( 
+                                     tipify(actionLink(
+                                       inputId = "choose_csv_file",
+                                       label = "Choose CSV File" ,
+                                       style = "simple",
+                                       size = "md",
+                                       block = FALSE,
+                                       no_outline = TRUE
+                                     ), "please choose a .csv document the document must be composed  of 5 columns (ID, baseMean, log2FC, pval, padj)", 
+                                     placement="bottom", 
+                                     trigger = "hover"), 
+                                     ),
+                          
                           accept = c(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
                             ".csv")
                 ),
-
+               
                 menuItem(
-                 "",
-                  icon = icon("question"),
-                 "need any help to import your data ?",
-                  h5("please choose a .csv document"),
-                  h5("the document must be composed ", br(), " of 6 columns(GeneName, ID, baseMean, ", br(), " log2FC, pval, padj)")
+                 "Input exemple",
+                 icon = icon("table"),
+                 br(),
+                 img(src = "cadre_exemple_input.png", width = 400),
+                 br(),br(),
+                 downloadButton('download_exemple',  "Exemple", status = "primary",)
+                 
                 ),
+                
+                br(),br(),
+                img(src = "banner_daisy.png", width = "240 e"),
                 
                 selectInput( "espece",
                   label = h4("Choose organism:"),
@@ -170,16 +187,16 @@ shinyUI(dashboardPage(
                  width = 12,
                  solidHeader = FALSE, 
                  collapsible = TRUE,
-                 box (                   
+                 box (  
                    sliderInput(inputId = "pvalue",
-                               label = "pvalue",
+                               label = "Adjusted p-value (padj) cutoff",
                                min = 0,
                                max = 1,
                                value = 0.05),
                    width = 6),
                  box (
                    sliderInput(inputId = "tresholdLog2FoldChange",
-                               label = "treshold for Log2FoldChange",
+                               label = "Log2FoldChange (log2FC) cutoff",
                                min = 0,
                                max = 5,
                                step = 0.1 ,
@@ -187,7 +204,6 @@ shinyUI(dashboardPage(
                    width = 6 ),
                  
                  box (
-                   status = "primary",
                    actionButton(
                      "Run_whole_data_inspection",
                      icon = icon("seedling"),
@@ -202,13 +218,13 @@ shinyUI(dashboardPage(
                  closable = FALSE, 
                  collapsible = TRUE,
                  collapsed = TRUE, 
-                 status = "primary",
+                 status = "success",
                  dataTableOutput("Table_whole_data"), 
                  width = 12), 
                
                box(
                  title = "Volcano Plot",
-                 status = "primary",
+                 status = "success",
                  shinycustomloader::withLoader(plotlyOutput("volcanoPlot_plotly", height = "450px"), type = "image", loader = "wait.gif"),
                  width = 6
                ), #fin box
@@ -216,7 +232,7 @@ shinyUI(dashboardPage(
                
                box(
                  title = "MA Plot",
-                 status = "primary",
+                 status = "success",
                  shinycustomloader::withLoader(plotlyOutput("MAPlot_plotly", height = "450px"), type = "image", loader = "wait.gif"),
                  width = 6
                ), #fin box
@@ -228,9 +244,9 @@ shinyUI(dashboardPage(
                  closable = TRUE, 
                  collapsible = TRUE,
                  collapsed = TRUE,
-                 status = "primary",
+                 status = "success",
                  dataTableOutput("Table_DEG"), 
-                 downloadButton('download_Table_DEG',"Download"),
+                 downloadButton('download_Table_DEG', icon = icon("leaf"),"Download"),
                  width = 12),
                
                box (
@@ -238,9 +254,9 @@ shinyUI(dashboardPage(
                  closable = TRUE, 
                  collapsible = TRUE,
                  collapsed = TRUE,
-                 status = "primary",
+                 status = "success",
                  dataTableOutput("Table_data_selected"), 
-                 downloadButton('download_Table_data_selected',"Download"),
+                 downloadButton('download_Table_data_selected', icon = icon("leaf"), "Download"),
                  width = 12)
             
              
@@ -528,6 +544,10 @@ shinyUI(dashboardPage(
                  box (
                    shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
                    width = 6),
+                 
+                 box (
+                   shinycustomloader::withLoader(plotlyOutput("piechart_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 12),
                  
                  
                  br(), br(),
