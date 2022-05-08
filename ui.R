@@ -18,8 +18,8 @@ library(highcharter)
 library(DT)
 library(shinyBS)
 library(ggridges)
+library(shinycustomloader)
 library(viridis)
-#library(upsetplot)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -193,14 +193,15 @@ shinyUI(dashboardPage(
                box(
                  title = "Volcano Plot",
                  status = "primary",
-                 plotlyOutput("volcanoPlot_plotly"),
+                 shinycustomloader::withLoader(plotlyOutput("volcanoPlot_plotly", height = "450px"), type = "image", loader = "wait.gif"),
                  width = 6
                ), #fin box
+               
                
                box(
                  title = "MA Plot",
                  status = "primary",
-                 plotlyOutput("MAPlot_plotly"),
+                 shinycustomloader::withLoader(plotlyOutput("MAPlot_plotly", height = "450px"), type = "image", loader = "wait.gif"),
                  width = 6
                ), #fin box
 
@@ -283,28 +284,45 @@ shinyUI(dashboardPage(
                                min = 0,
                                max = 0.25,
                                value = 0.05),
-                   width = 9
+                  width = 7
+                  ),
                    
+                   
+                   box(
+                   selectInput( inputId = "kegg_adj_method",
+                                label = h4("Adjustment method:"),
+                                choices = list(
+                                  'Holm (1979) ("holm")' = "holm", 
+                                  'Hochberg (1988) ("hochberg")' = "hochberg", 
+                                  'Hommel (1988) ("hommel")' = "hommel", 
+                                  'Bonferroni correction ("bonferroni")' = "bonferroni", 
+                                  'Benjamini & Hochberg (1995) ("BH" or its alias "fdr")' = "BH", 
+                                  'Benjamini & Yekutieli (2001) ("BY")' = "BY",
+                                  'none' = "none"
+                                ),
+                                selected = 'none'),
+                   width = 3
                    ),
                    
                    box(
-                     actionButton("Run_Annotation_ENSEMBL_to_GO","Run Annotation"),
-                     width = 3
+                     actionButton("Run_Annotation_ENSEMBL_to_GO","Run"),
+                     width = 2
                    )
                    
                    
                ),
                
-               box (dataTableOutput("enrichKEGG_table"), 
+               box (title = "Gene annotation with KEGG",
+                 dataTableOutput("enrichKEGG_table"), 
                     width = 12, style = "overflow-x: scroll;"),
                
                box(tstatus = "warning", solidHeader = TRUE, width = 12, height = "550px",
-                   plotlyOutput("dotplot_kegg", height = "450px")
+                   shinycustomloader::withLoader(plotlyOutput("dotplot_kegg", height = "450px"), type = "image", loader = "wait.gif")
                ),
                
                
                mainPanel(title = "GSE Plot", status = "warning", solidHeader = TRUE, width = 12, height = "550px",
-                   plotlyOutput("method_kegg", height = "450px")
+                         shinycustomloader::withLoader(plotlyOutput("method_kegg", height = "450px"), type = "image", loader = "wait.gif")
                ),
               
                sidebarLayout(
@@ -473,20 +491,18 @@ shinyUI(dashboardPage(
                              value = 10),
                  
 
-                 
-                 
-
                  box (
-                   plotlyOutput("barplot_domains_enrichment"),
+                   shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
                    width = 6),
+                
                  box (
-                   plotlyOutput("dotplot_domains_enrichment"),
+                   shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
                    width = 6),
                  
                  
                  br(), br(),
                  
-                 
+
                  br(), br(),
                  
                  h1( strong("Over-representation (or enrichment) analysis"), 
@@ -500,10 +516,10 @@ shinyUI(dashboardPage(
                  h2("Protein domain enrichment - BarPlot"),
                  
 
-                 plotlyOutput("barplot_domains_enrichment_enricher"),
+                 shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment_enricher", height = "450px"), type = "image", loader = "wait.gif"),
                  br(),
                  h2("Protein domain enrichment - DotPlot"),
-                 plotlyOutput("dotplot_domains_enrichment_enricher")
+                 shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment_enricher", height = "450px"), type = "image", loader = "wait.gif")
                  
                ),
                
@@ -521,7 +537,7 @@ shinyUI(dashboardPage(
                  br(), br(),
                  
                  "Barplot :",
-                 plotlyOutput("barplot_domain_enrichment_GSEA"),
+                 shinycustomloader::withLoader(plotlyOutput("barplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif"),
                  
                  br(), br(),
 
@@ -534,7 +550,7 @@ shinyUI(dashboardPage(
 
                  
                  br(), br(),
-                 plotlyOutput("gseaplot_domain_enrichment_GSEA")
+                 shinycustomloader::withLoader(plotlyOutput("gseaplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif")
                )  
                
 
