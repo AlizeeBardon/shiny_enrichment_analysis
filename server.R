@@ -93,15 +93,13 @@ biomart_dataset <- reactive({
   req(biomart_dataset)
 })
 
-data_pour_plot <- reactive({
+#domain_enrichment_ORA_enricher <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 1){
+#eventReactive(input$Run_protein_domains,
+data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
   df_brut <- re()
-
   df <- na.omit(df_brut)
-
   pvalue <- pvalue()
-  
   pvalue_log10 <- -log10(pvalue)
-  
   tresholdlog2foldchange <- tresholdLog2FoldChange()
   
   df$key <- row.names(df)
@@ -114,7 +112,7 @@ data_pour_plot <- reactive({
   # if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
   df$diffexpressed[df$log2FC < -tresholdlog2foldchange & df$padj < pvalue] <- "DOWN"
   
-  df
+  req(df)
 })
 
 
@@ -203,15 +201,34 @@ data_pour_plot <- reactive({
       data_selected_from_graph <- event_data("plotly_selected",source = "source1")
       D_subset = subset(D, indice %in%  data_selected_from_graph$key)
     })
+
+    output$Table_whole_data <- renderDataTable({ 
+      D <- data_pour_plot()
+
+      DT::datatable(D) 
+    }) # fin renderDataTable({
     
+    output$Table_DEG <- renderDataTable({ 
+      D <- data_pour_plot()
+      pvalue <- pvalue()
+      tresholdlog2foldchange <- tresholdLog2FoldChange()
+      DEG = D[which(D$padj<=pvalue & abs(D$log2FC)> tresholdlog2foldchange ),]
+      DT::datatable(DEG) 
+    }) # fin renderDataTable({
     
-    output$Table_subset_data_selected <- renderDataTable({ 
+    output$Table_data_selected <- renderDataTable({ 
       D <- selected_data()
       DT::datatable(D) 
     }) # fin renderDataTable({
     
+    output$download_Table_DEG <- downloadHandler(
+      filename = function(){"DEG.csv"}, 
+      content = function(fname){
+        write.csv(DEG(), fname)
+      }
+    )
     
-    output$download <- downloadHandler(
+    output$download_Table_data_selected <- downloadHandler(
       filename = function(){"selected_data.csv"}, 
       content = function(fname){
         write.csv(selected_data(), fname)

@@ -183,12 +183,28 @@ shinyUI(dashboardPage(
                                min = 0,
                                max = 5,
                                step = 0.1 ,
-                               value = 0.1),
-                   width = 6 )
+                               value = 2),
+                   width = 6 ),
+                 
+                 box (
+                   status = "primary",
+                   actionButton(
+                     "Run_whole_data_inspection",
+                     icon = icon("seedling"),
+                     strong("Run Whole Data Inspection")),
+                   width = 12)
                  
                  
                ),
                
+               box (
+                 title = "Input Data",
+                 closable = FALSE, 
+                 collapsible = TRUE,
+                 collapsed = TRUE, 
+                 status = "primary",
+                 dataTableOutput("Table_whole_data"), 
+                 width = 12), 
                
                box(
                  title = "Volcano Plot",
@@ -206,11 +222,25 @@ shinyUI(dashboardPage(
                ), #fin box
 
                
+
                box (
-                 title = "Selected data",
+                 title = "DEG (using padj and log2FC cutoff selected) used for subsequent analysis",
+                 closable = TRUE, 
+                 collapsible = TRUE,
+                 collapsed = TRUE,
                  status = "primary",
-                 dataTableOutput("Table_subset_data_selected"), 
-                 downloadButton('download',"Download"),
+                 dataTableOutput("Table_DEG"), 
+                 downloadButton('download_Table_DEG',"Download"),
+                 width = 12),
+               
+               box (
+                 title = "Selected data (points selected on the plot (Volcanoplot or MaPlot)",
+                 closable = TRUE, 
+                 collapsible = TRUE,
+                 collapsed = TRUE,
+                 status = "primary",
+                 dataTableOutput("Table_data_selected"), 
+                 downloadButton('download_Table_data_selected',"Download"),
                  width = 12)
             
              
