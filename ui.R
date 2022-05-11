@@ -19,12 +19,13 @@ library(DT)
 library(shinyBS)
 library(ggridges)
 library(shinycustomloader)
-#library(upsetplot)
+library(viridis)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
   skin = "purple",
   title = "Enrichment Analysis",
+  
   
   # HEADER ------------------------------------------------------------------
   
@@ -86,7 +87,8 @@ shinyUI(dashboardPage(
   dashboardSidebar(
     width = 250,
     sidebarMenu(id="tabs",
-                fileInput("file1", h4("Choose CSV File"),
+                fileInput("file1", 
+                          h4("Choose CSV File"),
                           accept = c(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -94,7 +96,9 @@ shinyUI(dashboardPage(
                 ),
 
                 menuItem(
-                  "need any help to import your data ?",
+                 "",
+                  icon = icon("question"),
+                 "need any help to import your data ?",
                   h5("please choose a .csv document"),
                   h5("the document must be composed ", br(), " of 6 columns(GeneName, ID, baseMean, ", br(), " log2FC, pval, padj)")
                 ),
@@ -179,7 +183,7 @@ shinyUI(dashboardPage(
                                min = 0,
                                max = 5,
                                step = 0.1 ,
-                               value = 1),
+                               value = 0.1),
                    width = 6 )
                  
                  
@@ -200,8 +204,7 @@ shinyUI(dashboardPage(
                  shinycustomloader::withLoader(plotlyOutput("MAPlot_plotly", height = "450px"), type = "image", loader = "wait.gif"),
                  width = 6
                ), #fin box
-               
-               
+
                
                box (
                  title = "Selected data",
@@ -218,6 +221,8 @@ shinyUI(dashboardPage(
       
       tabPanel("GO Term Enrichment",
       
+               br(), br(),
+               
                box(
                  title = "Parameters - GO Term Enrichment", 
                  closable = TRUE, 
@@ -470,7 +475,11 @@ shinyUI(dashboardPage(
 
                  br(), 
                  h2("Protein domain enrichment - Result table"),
-                 dataTableOutput("Table_domains_enrichment"), 
+                 box (
+                   dataTableOutput("Table_domains_enrichment"),
+                   width = 12),
+                 
+                  
                  br(), br(),
                  
                  
@@ -481,12 +490,24 @@ shinyUI(dashboardPage(
                              max = 200,
                              value = 10),
                  
-                 shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
+
+                 box (
+                   shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 6),
+                
+                 box (
+                   shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 6),
+                 
+                 
+                 br(), br(),
+                 
+
                  br(), br(),
                  
                  h1( strong("Over-representation (or enrichment) analysis"), 
                      br(),
-                     tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/GSEA","GSEA() function from clusterProfiler"),
+                     tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/enricher","enricher() function from clusterProfiler"),
                      align = "center"),
                  br(),
                  h2("Protein domain enrichment - Result table"),
@@ -505,7 +526,10 @@ shinyUI(dashboardPage(
                
                conditionalPanel(
                  condition = "input.method_prt_domain == 2",
-                 h1(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method "), align = "center"),
+                 h1(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method "), 
+                    br(), 
+                    tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/GSEA","GSEA() function from clusterProfiler"),
+                    align = "center"),
 
                  
                  br(), br(),

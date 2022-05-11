@@ -29,8 +29,7 @@ library(DT)
 library(ggplot2)
 library(shinyalert)
 library(ReactomePA)
-
-
+library(ggrepel)
 
 # Define server 
 shinyServer(function(input, output, session) {
@@ -43,26 +42,21 @@ re <- reactive({
       file <- input$file1
       ext <- tools::file_ext(file$datapath)
       req(file)
-      print(head(file))
       validate(need(ext == "csv", "Invalid file. Please upload a .csv file"))
       #list_df <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
-      data <- read.csv(file$datapath, header = TRUE, sep = ";") %>% 
-        mutate(
-          minusLog10Pvalue = -log10(padj)
-          )
-
+      data <- read.csv(file$datapath, header = TRUE, sep = ";") 
+      data <- na.omit(data)
       required_columns <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
       column_names <- colnames(data)
       min_columns <- 6
-      
       shiny::validate(
         need(ncol(data) >= min_columns, "Your data has not enought columns. Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj"),
         need(all(required_columns %in% column_names), "You don't have the right data.  Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj")
       )
-      
       data
-      
       })
+
+
 
 pvalue <- reactive({
   pvalue <- input$pvalue
@@ -99,6 +93,31 @@ biomart_dataset <- reactive({
   req(biomart_dataset)
 })
 
+data_pour_plot <- reactive({
+  df_brut <- re()
+
+  df <- na.omit(df_brut)
+
+  pvalue <- pvalue()
+  
+  pvalue_log10 <- -log10(pvalue)
+  
+  tresholdlog2foldchange <- tresholdLog2FoldChange()
+  
+  df$key <- row.names(df)
+  # The significantly differentially expressed genes are the ones found in the upper-left and upper-right corners.
+  # Add a column to the data frame to specify if they are UP- or DOWN- regulated (log2FoldChange respectively positive or negative)
+  # add a column of NAs
+  df$diffexpressed <- "NO"
+  # if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+  df$diffexpressed[df$log2FC > tresholdlog2foldchange & df$padj < pvalue] <- "UP"
+  # if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+  df$diffexpressed[df$log2FC < -tresholdlog2foldchange & df$padj < pvalue] <- "DOWN"
+  
+  df
+})
+
+
 
     # BODY --------------------------------------------------------------------
     
@@ -108,22 +127,20 @@ biomart_dataset <- reactive({
 
     output$volcanoPlot_plotly <- renderPlotly({
         #input data
-        data_plot_plotly <- re()
-        data_plot_plotly$col <- "black"
+        data_plot_plotly <- data_pour_plot()
         pvalue <- pvalue()
-        pvalue_log10 <- -log10(pvalue)
         tresholdlog2foldchange <- tresholdLog2FoldChange()
-        data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC > tresholdlog2foldchange, "col"] <- "green"
-        data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue_log10 & data_plot_plotly$log2FC < -tresholdlog2foldchange, "col"] <- "red"
-        data_plot_plotly$key <- row.names(data_plot_plotly)
-        
+
+
         # volcanoPlot using ggplot and plotly
         p <- ggplot(
           data = data_plot_plotly, 
-          mapping = aes(x = log2FC, y = minusLog10Pvalue, gene= GeneName, ID= ID, col = I(col), key = key)) +
+          #mapping = aes(x = log2FC, y=-log10(padj), gene= GeneName, ID= ID, col=diffexpressed, key = key)) +
+          mapping = aes(x = log2FC, y=-log10(padj), col=diffexpressed, key = key)) +
           geom_point(size = 0.45) + 
           theme_bw()  + 
-          geom_hline(yintercept=pvalue_log10, linetype="dashed", color = "black", size=0.1) +
+          scale_color_manual(values=c("red", "black", "green")) +
+          geom_hline(yintercept=-log10(pvalue), linetype="dashed", color = "black", size=0.1) +
           geom_vline(xintercept=tresholdlog2foldchange, linetype="dashed", color = "black", size=0.1) +
           geom_vline(xintercept=-tresholdlog2foldchange, linetype="dashed", color = "black", size=0.1) +
           xlab("log2 fold change") + 
@@ -146,22 +163,20 @@ biomart_dataset <- reactive({
 
     output$MAPlot_plotly <- renderPlotly({
       #input data
-      data_plot_plotly <- re()
-      data_plot_plotly$key <- row.names(data_plot_plotly)
-      data_plot_plotly$col <- "black"
+      df <- data_pour_plot()
       pvalue <- pvalue()
       pvalue_log10 <- -log10(pvalue)
       tresholdlog2foldchange <- tresholdLog2FoldChange()
-      data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC > tresholdlog2foldchange, "col"] <- "green"
-      data_plot_plotly[data_plot_plotly$minusLog10Pvalue > pvalue & data_plot_plotly$log2FC < -tresholdlog2foldchange, "col"] <- "red"
       
       # MAplot using ggplot and plotly
       p <- ggplot(
-        data = data_plot_plotly, 
+        data = df, 
         mapping = aes(
-          x = log2(baseMean), y = log2FC, gene= GeneName, ID= ID, col = I(col), key = key)) +
+          #x = log2(baseMean), y = log2FC, gene= GeneName, ID= ID, col=diffexpressed, key = key)) +
+          x = log2(baseMean), y = log2FC, col=diffexpressed, key = key)) +
         geom_point(size = 0.45)+ 
         theme_bw()  +
+        scale_color_manual(values=c("red", "black", "green")) +
         xlab("log2(baseMean)") + 
         ylab("log2FC")
       
@@ -175,14 +190,13 @@ biomart_dataset <- reactive({
       # updating the name of the saved plot 
       config(plotly_object,
              toImageButtonOptions= list(filename = paste0("MAPlot_pvalue_", pvalue, "_log2FC_", tresholdlog2foldchange)))
-      
     })
     
-
+      
 ### Interactive Table
     
     selected_data <- reactive({
-      D <- re() %>%  
+      D <- data_pour_plot() %>%  
         mutate(
           indice = row_number()
         )
@@ -207,7 +221,7 @@ biomart_dataset <- reactive({
     #surligner la ligne correspondant au point clique sur le graphique
     proxy <- DT::dataTableProxy("Table_subset_data_selected")
     observe({
-      data <- re()
+      data <- data_pour_plot()
       subset_data <- data.frame(
         ID_test = data$ID,
         row_id = 1:length(data$ID),
@@ -416,6 +430,24 @@ biomart_dataset <- reactive({
        
      })
      
+     DEG <-  eventReactive(input$Run_protein_domains, {
+       resOrdered <- re()
+       tresholdLog2FoldChange <- tresholdLog2FoldChange()
+       pvalue <- pvalue()
+       
+       if(input$type_prt_domain == "Both"){
+         GeneList = resOrdered[which(resOrdered$padj<=pvalue & abs(resOrdered$log2FC)>tresholdLog2FoldChange),]$ID
+       }
+       else if(input$type_prt_domain == "Under"){
+         GeneList = resOrdered[which(resOrdered$padj<=pvalue & resOrdered$log2FC < tresholdLog2FoldChange),]$ID
+       }
+       else if(input$type_prt_domain == "Over"){
+         GeneList = resOrdered[which(resOrdered$padj<=pvalue & resOrdered$log2FC > -tresholdLog2FoldChange),]$ID
+       }
+       GeneList
+       
+     })
+     
 
      ## code fonction ORA 
      domain_enrichment_ORA <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 1){
@@ -432,8 +464,8 @@ biomart_dataset <- reactive({
        summary(GeneRef)
        
        #liste d'interet
-       GeneList = resOrdered[which(resOrdered$padj<=pvalue),]$ID
-       GeneList = data.frame(GeneList)
+       GeneList <- DEG()
+       GeneList <- data.frame(GeneList)
        
        ###  I - prepare data for enrichment      
        
@@ -479,40 +511,14 @@ biomart_dataset <- reactive({
        
        hypergeom_test = function(x, k, m, n){
          # calculate p-value and adjusted p-value
-         
          pvalue_fisher.test <- c()
-         
-         if(input$type_prt_domain == "Both" ){ # Test for both
-           for (i in 1:length(x)) {
-             plop = ((fisher.test(matrix(c(x[i], m[i]-x[i], k-x[i], n-(k-x[i])),2,2), alternative='two.sided'))$p.value)
-             pvalue_fisher.test <- c(pvalue_fisher.test, plop)
-           }
-           
-         }
-         
-         # Test for under-representation (depletion)
-         # fisher.test(matrix(c(Overlap, group2-Overlap, group1-Overlap, Total-group2-group1 +Overlap), 2, 2), alternative='less')$p.value
-         # phyper(Overlap, group2, Total-group2, group1, lower.tail= TRUE)
-         # pvalue = phyper(x-1,m,n,k, lower.tail = FALSE)
-         
-         else if(input$type_prt_domain == "Under" ){ # Test for both
-           for (i in 1:length(x)) {
-             plop = ((fisher.test(matrix(c(x[i], m[i]-x[i], k-x[i], n-(k-x[i])),2,2), alternative='less'))$p.value)
-             pvalue_fisher.test <- c(pvalue_fisher.test, plop)
-           }
-           
-         }
-         
          # Test for over-representation (enrichment)
          # phyper(Overlap-1, group2, Total-group2, group1,lower.tail= FALSE)
          # fisher.test(matrix(c(Overlap, group2-Overlap, group1-Overlap, Total-group2-group1 +Overlap), 2, 2), alternative='greater')$p.value
-         else if(input$type_prt_domain == "Over" ){ # Test for both
-           for (i in 1:length(x)) {
+         for (i in 1:length(x)) {
              plop = ((fisher.test(matrix(c(x[i], m[i]-x[i], k-x[i], n-(k-x[i])),2,2), alternative='greater'))$p.value)
              pvalue_fisher.test <- c(pvalue_fisher.test, plop)
-           }
-           
-         }
+             }
          
          padj = p.adjust(pvalue_fisher.test, method = adjustment_method, n=length((pvalue_fisher.test)))
          return (list(pvalue_fisher.test = pvalue_fisher.test, padj = padj))
@@ -536,10 +542,10 @@ biomart_dataset <- reactive({
          table.enrich = data.frame(interpro_ID = Gene.Bg.ratio$Term, 
                                    pvalue_fisher.test = test$pvalue_fisher.test, 
                                    padj = test$padj,
-                                   #GeneRatio = Gene.ratio, 
-                                   GeneRatio = paste0(Gene.ratio, " (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
-                                   #BgRatio = Bg.ratio,
-                                   BgRatio = paste0(Bg.ratio, " (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
+                                   GeneRatio = Gene.ratio, 
+                                   GR_detail = paste0(" (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
+                                   BgRatio = Bg.ratio,
+                                   BgR_detail = paste0(" (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
                                    interpro_description = Gene.Bg.ratio$interpro_description,
                                    count = Gene.Bg.ratio$x)
          
@@ -563,18 +569,18 @@ biomart_dataset <- reactive({
        interpro_id <- Protein_Domains_data()
        table_TERM2GENE = interpro_id[,1:2]
        
-       gene_list_enricher = resOrdered[which(resOrdered$padj<=pvalue),]$ID
+       #gene_list_enricher = resOrdered[which(resOrdered$padj<=pvalue),]$ID
+       DEG_under = DEG()
        
        result_enricher <- enricher(
-         gene = unique(gene_list_enricher), 
-         pvalueCutoff = 0.05, 
+         gene = unique(DEG_under), 
+         pvalueCutoff = pvalue, 
          pAdjustMethod = adjustment_method, 
          universe = unique(resOrdered$ID), 
          minGSSize = 10, 
          maxGSSize = 500, 
          qvalueCutoff = 0.2, 
-         TERM2GENE =table_TERM2GENE, 
-         TERM2NAME = NA)
+         TERM2GENE =table_TERM2GENE)
        })
      
 
@@ -619,25 +625,45 @@ biomart_dataset <- reactive({
 
      
      output$barplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
-       if(input$method_prt_domain == 1){
          
          max <- input$nb_barplot_ora_coder
          
          D <- domain_enrichment_ORA()
          ggplot(data = D[1:max,], aes(x= count , y = reorder(interpro_ID, count)  ) ) +
            geom_bar(stat = "identity", aes(fill = padj))  +
-           #geom_bar(stat = "identity", fill = rainbow(n=length(D$padj))) +
-           #scale_color_gradientn(colours = rainbow(5)) +
+           scale_fill_viridis_c(option = 'magma') +
            theme(axis.text.x = element_text(
              angle = 90,
              hjust = 1,
              vjust = 0.5
            )) +
            labs(y = "Protein Domain (Interpro ID)", x = "Count")
-       }
 
      })
      
+
+     output$dotplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
+         max <- input$nb_barplot_ora_coder
+         D <- domain_enrichment_ORA()
+
+         ggplot(D[1:max,], aes(x=interpro_ID, y=GeneRatio)) +
+           geom_point(stat='identity', aes(col=padj, size=count), alpha=0.75) +   # Draw points
+           scale_colour_viridis_c(option = 'magma') +
+           geom_segment(aes(x=interpro_ID,
+                            xend=interpro_ID,
+                            y=min(GeneRatio),
+                            yend=max(GeneRatio)
+                            ),
+                        linetype="none",
+                        size=0.1) +   # Draw dashed lines
+           labs(x="Protein Domain",
+                y=" Genre Ratio",
+                title = "Dotplot",
+                fill="padj") +
+           coord_flip()
+
+     })
+
      
      output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
        result_enricher <- domain_enrichment_ORA_enricher()
@@ -667,7 +693,8 @@ biomart_dataset <- reactive({
      
      output$barplot_domain_enrichment_GSEA <- renderPlotly( if(input$method_prt_domain == 2){ 
        result_GSEA <- domain_enrichment_GSEA()
-       dotplot(result_GSEA)
+       #dotplot(result_GSEA)
+       dotplot(result_GSEA, showCategory=10, split=".sign") + facet_grid(.~.sign)
        }) # fin renderDataTable({
     
      output$gseaplot_domain_enrichment_GSEA <- renderPlotly( if(input$method_prt_domain == 2){ 
