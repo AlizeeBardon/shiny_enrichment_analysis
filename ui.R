@@ -321,7 +321,7 @@ shinyUI(dashboardPage(
                ),
               
                sidebarLayout(
-                 sidebarPanel(selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL),actionButton("go", "Generate pathway with pathview")),
+                 sidebarPanel(selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), checkboxInput("download_pathview", label = "Download", value = FALSE), actionButton("go", "Generate pathway with pathview")),
                  mainPanel(
                    bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
                  )
