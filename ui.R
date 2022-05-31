@@ -120,33 +120,32 @@ shinyUI(dashboardPage(
                 br(),br(),
                 img(src = "banner_daisy.png", width = "240 e"),
                 
-                selectInput( "espece",
-                  label = h4("Choose organism:"),
-                  choices = list(
-                                  "Human (org.Hs.eg.db)"="org.Hs.eg.db",
-                                  "Mouse (org.Mm.eg.db)"="org.Mm.eg.db",
-                                  "Rat (org.Rn.eg.db)"="org.Rn.eg.db",
-                                  "Yeast (org.Sc.sgd.db)"="org.Sc.sgd.db",
-                                  "Fly (org.Dm.eg.db)"="org.Dm.eg.db",
-                                  "Arabidopsis (org.At.tair.db)"="org.At.tair.db",
-                                  "Zebrafish (org.Dr.eg.db)"="org.Dr.eg.db",
-                                  "Bovine (org.Bt.eg.db)"="org.Bt.eg.db",
-                                  "Worm (org.Ce.eg.db)"="org.Ce.eg.db",
-                                  "Chicken (org.Gg.eg.db)"="org.Gg.eg.db",
-                                  "Canine (org.Cf.eg.db)"="org.Cf.eg.db",
-                                  "Pig (org.Ss.eg.db)"="org.Ss.eg.db",
-                                  "Rhesus (org.Mmu.eg.db)"="org.Mmu.eg.db",
-                                  "E coli strain K12 (org.EcK12.eg.db)"="org.EcK12.eg.db",
-                                  "Xenopus (org.Xl.eg.db)"="org.Xl.eg.db",
-                                  "Chimp (org.Pt.eg.db)"="org.Pt.eg.db",
-                                  "Anopheles (org.Ag.eg.db)"="org.Ag.eg.db",
-                                  "Malaria (org.Pf.plasmo.db)"="org.Pf.plasmo.db",
-                                  "E coli strain Sakai (org.EcSakai.eg.db)"="org.EcSakai.eg.db"
-                                ),
-                  selected = NULL
-                 
-                ) , 
-                
+                selectInput( "espece_id",
+                             label = h4("Choose organism:"),
+                             choices = list(
+                               "Human (org.Hs.eg.db)"=1,
+                               "Mouse (org.Mm.eg.db)"=2,
+                               "Rat (org.Rn.eg.db)"=3,
+                               "Yeast (org.Sc.sgd.db)"=4,
+                               "Fly (org.Dm.eg.db)"=5,
+                               "Arabidopsis (org.At.tair.db)"=6,
+                               "Zebrafish (org.Dr.eg.db)"=7,
+                               "Bovine (org.Bt.eg.db)"=8,
+                               "Worm (org.Ce.eg.db)"=9,
+                               "Chicken (org.Gg.eg.db)"=10,
+                               "Canine (org.Cf.eg.db)"=11,
+                               "Pig (org.Ss.eg.db)"=12,
+                               "Rhesus (org.Mmu.eg.db)"=13,
+                               "E coli strain K12 (org.EcK12.eg.db)"=14,
+                               "Xenopus (org.Xl.eg.db)"=15,
+                               "Chimp (org.Pt.eg.db)"=16,
+                               "Anopheles (org.Ag.eg.db)"=17,
+                               "Malaria (org.Pf.plasmo.db)"=18,
+                               "E coli strain Sakai (org.EcSakai.eg.db)"=19
+                             ),
+                             selected = NULL
+                             
+                ) ,
                 
 
                 br(),
@@ -257,9 +256,9 @@ shinyUI(dashboardPage(
                  status = "success",
                  dataTableOutput("Table_data_selected"), 
                  downloadButton('download_Table_data_selected', icon = icon("leaf"), "Download"),
-                 width = 12)
+                 width = 12),
             
-             
+               dataTableOutput("id_toto")
       ), # tabPanel("Whole Data Analysis"
     
       
@@ -438,33 +437,19 @@ shinyUI(dashboardPage(
                                      selected = NULL)
                  ),
                  column(4,
-                        textInput("biomart_listMarts", 
-                                  label = h4(
-                                    "BioMart database ",
-                                    tipify(actionBttn(
-                                      inputId = "prt1",
-                                      icon = icon("question"),
-                                      style = "jelly",
-                                      size = "xs",
-                                      block = FALSE,
-                                      no_outline = TRUE
-                                    ), "This must be BioMart databases to which biomaRt can connect to (cf listMarts)", placement="bottom", trigger = "hover") 
-                                    ), value = "ensembl"),
-                        br(),br(),
-                      
-                               
-                        textInput("biomart_dataset", 
-                                  label = h4(
-                                    "BioMart Dataset",
-                                    tipify(actionBttn(
-                                      inputId = "prt2",
-                                      icon = icon("question"),
-                                      style = "jelly",
-                                      size = "xs",
-                                      block = FALSE,
-                                      no_outline = TRUE
-                                    ), "Enter a valid BioMart Dataset for the BioMart database (for example, within the Ensembl genes mart every species is a different dataset)", placement="bottom", trigger = "hover") 
-                                    ), value = "mmusculus_gene_ensembl" )
+                        # textInput("biomart_listMarts", 
+                        #           label = h4(
+                        #             "BioMart database ",
+                        #             tipify(actionBttn(
+                        #               inputId = "prt1",
+                        #               icon = icon("question"),
+                        #               style = "jelly",
+                        #               size = "xs",
+                        #               block = FALSE,
+                        #               no_outline = TRUE
+                        #             ), "This must be BioMart databases to which biomaRt can connect to (cf listMarts)", placement="bottom", trigger = "hover") 
+                        #             ), value = "ensembl"),
+                        br(),br()
                  ),
                  
                  column(4,
@@ -478,7 +463,7 @@ shinyUI(dashboardPage(
                                         size = "xs",
                                         block = FALSE,
                                         no_outline = TRUE
-                                      ), "Output parameters for graph creation (thresholding of domains on their adjusted p-value", placement="bottom", trigger = "hover") 
+                                      ), "Thresholding for subsequent analysis (ORA or GSEA)", placement="bottom", trigger = "hover") 
                                       ),
                                     min = 0,
                                     max = 1,
@@ -547,6 +532,17 @@ shinyUI(dashboardPage(
                  
                  box (
                    shinycustomloader::withLoader(plotlyOutput("piechart_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 12),
+                 
+                 # 
+                 # box (
+                 #   #shinycustomloader::withLoader(plotlyOutput("piechart_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
+                 #   title = " Word Cloud ", 
+                 #   wordcloud2Output("word_cloud"),
+                 #   width = 12),
+                 # 
+                 box (
+                   plotOutput("cloud"),
                    width = 12),
                  
                  

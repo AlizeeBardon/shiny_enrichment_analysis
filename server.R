@@ -29,7 +29,8 @@ library(DT)
 library(ggplot2)
 library(shinyalert)
 library(ggrepel)
-
+#library(wordcloud2)
+library(wordcloud)
 
 # Define server 
 shinyServer(function(input, output, session) {
@@ -89,14 +90,9 @@ subset_up_down_regulated <- reactive({
   req(subset_up_down_regulated)
 })
 
-espece <- reactive({
-  espece <- input$espece
-  req(espece)
-})
-
-biomart_listMarts <- reactive({
-  biomart_listMarts <- input$biomart_listMarts
-  req(biomart_listMarts)
+espece_id <- reactive({
+  espece_id <- input$espece_id
+  req(espece_id)
 })
 
 biomart_dataset <- reactive({
@@ -104,6 +100,9 @@ biomart_dataset <- reactive({
   req(biomart_dataset)
 })
 
+orga_translate_table <- reactive({
+  orga_translate_table  <- read.csv("www/orga_translate_table.csv", sep=";")
+})
 
 data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
   df_brut <- re()
@@ -266,7 +265,10 @@ table_DEG_data <- reactive({
     }) # fin observe
     
 
-
+    output$id_toto <- renderDataTable({ 
+      D <- orga_translate_table()
+      DT::datatable(D) 
+    }) # fin renderDataTable({
 
 
     # -------------------------------------------------------------------
@@ -416,8 +418,10 @@ table_DEG_data <- reactive({
      Protein_Domains_data <- eventReactive(input$Run_protein_domains, {
        #input data
        resOrdered <- re()
-       biomart_dataset <- biomart_dataset()
-       biomart_listMarts <- biomart_listMarts()
+       orga_translate_table <- orga_translate_table()
+       espece_id <- espece_id()
+       biomart_dataset <- orga_translate_table[espece_id,3]
+       biomart_listMarts <- 'ensembl'
        
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        ensembl =useMart(biomart=biomart_listMarts, 
@@ -425,18 +429,15 @@ table_DEG_data <- reactive({
                         #host = "useast.ensembl.org"
                         )
        
-       interpro_id <- getBM(
-         attributes=c('interpro', 'interpro_description', 'ensembl_gene_id'),
+       interpro_id_raw <- getBM(
+         attributes=c('interpro', 'interpro_description', 'ensembl_transcript_id', 'ensembl_gene_id'),
          filters = 'ensembl_gene_id', 
          values = resOrdered$ID, 
          mart = ensembl)
+       head(interpro_id_raw)
        
        #enlever les valeurs manquantes
-       table_TERM2GENE <- cbind(interpro_id$interpro, interpro_id$ensembl_gene_id,interpro_id$interpro_description )
-       colnames(table_TERM2GENE) <- c("interpro", "ensembl_gene_id", 'interpro_description')
-       clean_interpro_to_geneid  <- subset(table_TERM2GENE, table_TERM2GENE[,1] != "")
-       interpro_id <-as.data.frame(clean_interpro_to_geneid)
-       
+       interpro_id  <- subset(interpro_id_raw, interpro_id_raw['interpro'] != "")
      })
      
      DEG <-  eventReactive(input$Run_protein_domains, {
@@ -549,14 +550,18 @@ table_DEG_data <- reactive({
          
          # create dataframe
          table.enrich = data.frame(interpro_ID = Gene.Bg.ratio$Term, 
-                                   pvalue_fisher.test = test$pvalue_fisher.test, 
+                                   Description = Gene.Bg.ratio$interpro_description, 
+                                   pvalue = test$pvalue_fisher.test, 
                                    padj = test$padj,
-                                   GeneRatio = Gene.ratio, 
-                                   GR_detail = paste0(" (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
-                                   BgRatio = Bg.ratio,
-                                   BgR_detail = paste0(" (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
+                                   BgRatio = paste0(" (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
+                                   GeneRatio = paste0(" (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
+                                   BgRatio_simple = Bg.ratio,
+                                   GeneRatio_simple = Gene.ratio,
                                    interpro_description = Gene.Bg.ratio$interpro_description,
-                                   count = Gene.Bg.ratio$x)
+                                   count = Gene.Bg.ratio$x, 
+                                   count_and_padj = paste0("count: ", Gene.Bg.ratio$x, " (padj: ", Gene.Bg.ratio$k, ")")
+                                   
+                                   )
          
          return (table.enrich[order(table.enrich$pval), ])
        }
@@ -655,18 +660,18 @@ table_DEG_data <- reactive({
          max <- input$nb_barplot_ora_coder
          D <- domain_enrichment_ORA()
 
-         ggplot(D[1:max,], aes(x=interpro_ID, y=GeneRatio)) +
+         ggplot(D[1:max,], aes(x=interpro_ID, y=GeneRatio_simple)) +
            geom_point(stat='identity', aes(col=padj, size=count), alpha=0.75) +   # Draw points
            scale_colour_viridis_c(option = 'magma') +
            geom_segment(aes(x=interpro_ID,
                             xend=interpro_ID,
-                            y=min(GeneRatio),
-                            yend=max(GeneRatio)
+                            y=min(GeneRatio_simple),
+                            yend=max(GeneRatio_simple)
                             ),
                         linetype="none",
                         size=0.1) +   # Draw dashed lines
            labs(x="Protein Domain",
-                y=" Genre Ratio",
+                y="Gene Ratio",
                 title = "Dotplot",
                 fill="padj") +
            coord_flip()
@@ -678,13 +683,30 @@ table_DEG_data <- reactive({
        D <- domain_enrichment_ORA()
        data <- D[,c('interpro_ID', 'count')]
        
-       fig <- plot_ly(data, labels = ~interpro_ID, values = ~count, type = 'pie')
-       fig <- fig %>% layout(title = 'United States Personal Expenditures by Categories in 1960',
+       fig <- plot_ly(D, 
+                      labels = ~Description, 
+                      values = ~count, 
+                      type = 'pie',
+                      text = ~count_and_padj,
+                      #hovertemplate = "%{labels}: <br>Popularity: %{D$GeneRatio} </br> %{D$padj}"
+                      hovertemplate = paste("<b>%{labels}</b><br>",
+                                            "%{text}<br>")
+                      )
+       fig <- fig %>% layout(title = 'Pie chart ',
                              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
        
        fig
        
+     })
+     
+     output$cloud <- renderPlot({
+       D <- domain_enrichment_ORA()
+       data <- D[,c('Description', 'count')]
+       
+       wordcloud(data$Description, data$count, scale=c(2,0.1),
+                     colors=brewer.pal(8, "Dark2"))
      })
      
      output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
