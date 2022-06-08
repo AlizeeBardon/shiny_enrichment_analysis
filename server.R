@@ -565,10 +565,10 @@ table_DEG_data <- reactive({
        }
        res.enrich.hypergeom.prt_dommain = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
        result = res.enrich.hypergeom.prt_dommain[which(res.enrich.hypergeom.prt_dommain$padj<pvalue),]
+       updateSliderInput(session, "nb_barplot_ora_coder", max = nrow(result))
        
        res_with_description = merge(result, unique(interpro_id[c('interpro_description','interpro')]), by.x = "interpro_ID", by.y = "interpro")
        res_with_domains_comptage = merge(res_with_description, comptage_Domains, by.x = "interpro_ID", by.y = "interpro")
-       
        } )  
      
      ## avec la fonction enricher (a titre de comparaison)
@@ -624,14 +624,6 @@ table_DEG_data <- reactive({
          pAdjustMethod = "BH",
          TERM2GENE=table_TERM2GENE)
      })
-     
-     # output$Table_domains_enrichment <- renderDataTable( if(input$method_prt_domain == 1){ 
-     #   D <- domain_enrichment_ORA()
-     #   col_a_afficher = c('interpro_ID','interpro_description', 'pvalue', 'padj', 'BgRatio', 'BgRatio_count', 'GeneRatio', 'GeneRatio_count', 'nb_domain', 'prt_par_domain')
-     #   updateSliderInput(session, "nb_barplot_ora_coder", max = nrow(D))
-     #   DT::datatable(D[col_a_afficher]) 
-     # }) # fin renderDataTable({
-     # 
      
      output$Table_domains_enrichment <- DT::renderDataTable(DT::datatable({
        data <- domain_enrichment_ORA() %>%

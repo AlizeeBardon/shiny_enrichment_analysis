@@ -389,214 +389,230 @@ shinyUI(dashboardPage(
                br(),
                
                box(
-                 title = tags$b("Parameters - Protein Domain Enrichment"), 
+                 title = strong("Parameters - Protein Domain Enrichment"), 
                  closable = TRUE, 
-                 status = "primary",
+                 status = "success",
                  width = 12,
-                 solidHeader = FALSE, 
+                 solidHeader = TRUE, 
                  collapsible = TRUE,
                  
 
                  br(),
-                   
-                 column(4, 
-                        
-                        radioButtons("method_prt_domain", 
-                                     label = h4(
-                                       "Analysis method",
-                                       tipify(actionBttn(
-                                         inputId = "prt5",
-                                         icon = icon("question"),
-                                         style = "jelly",
-                                         size = "xs",
-                                         block = FALSE,
-                                         no_outline = TRUE
-                                       ), "ORA : hypergeom test with BH adjustment", placement="bottom", trigger = "hover") 
-                                     ),
-                                     choices = list(
-                                       "Over epresentation analysis (ORA)" = 1, 
-                                       "Gene Set Enrichment Analysis (GSEA)" = 2), 
-                                     selected = 1),
-                        br(),
-                        radioButtons("type_prt_domain", 
-                                     label = h4("DEG type",
-                                                tipify(actionBttn(
-                                                  inputId = "prt5",
-                                                  icon = icon("question"),
-                                                  style = "jelly",
-                                                  size = "xs",
-                                                  block = FALSE,
-                                                  no_outline = TRUE
-                                                ), "Diffrential Expression Group", placement="bottom", trigger = "hover") 
-                                                ),
-                                     choices = list(
-                                       "Both" = "Both",
-                                       "Over expressed DEG only" = "Over", 
-                                       "Under expressed DEG only" = "Under" 
-                                       ),
-                                     selected = NULL)
-                 ),
-                 column(4,
-                        # textInput("biomart_listMarts", 
-                        #           label = h4(
-                        #             "BioMart database ",
-                        #             tipify(actionBttn(
-                        #               inputId = "prt1",
-                        #               icon = icon("question"),
-                        #               style = "jelly",
-                        #               size = "xs",
-                        #               block = FALSE,
-                        #               no_outline = TRUE
-                        #             ), "This must be BioMart databases to which biomaRt can connect to (cf listMarts)", placement="bottom", trigger = "hover") 
-                        #             ), value = "ensembl"),
-                        br(),br()
-                 ),
-                 
-                 column(4,
-                        sliderInput(inputId = "pvalue_prt_domain",
-                                    label = h4(
-                                      "Adjusted p-value cutoff",
-                                      tipify(actionBttn(
-                                        inputId = "prt3",
-                                        icon = icon("question"),
-                                        style = "jelly",
-                                        size = "xs",
-                                        block = FALSE,
-                                        no_outline = TRUE
-                                      ), "Thresholding for subsequent analysis (ORA or GSEA)", placement="bottom", trigger = "hover") 
-                                      ),
-                                    min = 0,
-                                    max = 1,
-                                    value = 0.05),
-                        
-                        selectInput( inputId = "pvalue_adjustment_prt_domain",
-                                     label = h4("Adjustment method:"),
-                                     choices = list(
-                                       'Holm (1979) ("holm")' = "holm", 
-                                       'Hochberg (1988) ("hochberg")' = "hochberg", 
-                                       'Hommel (1988) ("hommel")' = "hommel", 
-                                       'Bonferroni correction ("bonferroni")' = "bonferroni", 
-                                       'Benjamini & Hochberg (1995) ("BH" or its alias "fdr")' = "BH", 
-                                       'Benjamini & Yekutieli (2001) ("BY")' = "BY",
-                                       'none' = "none"
-                                     ),
-                                     selected = NULL
-                        )
-                        
-                        
-                 ),
-
                  
                  box (
-                   status = "primary",
+                   radioButtons("method_prt_domain", 
+                                label = h4(
+                                  "Analysis method",
+                                  tipify(actionBttn(
+                                    inputId = "prt5",
+                                    icon = icon("question"),
+                                    style = "jelly",
+                                    size = "xs",
+                                    block = FALSE,
+                                    no_outline = TRUE
+                                  ), "ORA : hypergeom test with BH adjustment", placement="bottom", trigger = "hover") 
+                                ),
+                                choices = list(
+                                  "Over epresentation analysis (ORA)" = 1, 
+                                  "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                selected = 1),
+                   
+                   conditionalPanel(
+                     
+                     
+                     
+                     condition = "input.method_prt_domain == 1", 
+                     
+                     radioButtons("type_prt_domain", 
+                                  label = h4("DEG type",
+                                             tipify(actionBttn(
+                                               inputId = "prt5",
+                                               icon = icon("question"),
+                                               style = "jelly",
+                                               size = "xs",
+                                               block = FALSE,
+                                               no_outline = TRUE
+                                             ), "Diffrential Expression Group", placement="bottom", trigger = "hover") 
+                                  ),
+                                  choices = list(
+                                    "Both" = "Both",
+                                    "Over expressed DEG only" = "Over", 
+                                    "Under expressed DEG only" = "Under" 
+                                  ),
+                                  selected = NULL),
+                     ), 
+                   width = 3
+                 ),
+                 
+                 
+                 box (
+                   selectInput( inputId = "pvalue_adjustment_prt_domain",
+                                label = h4("Adjustment method:"),
+                                choices = list(
+                                  'Holm (1979) ("holm")' = "holm", 
+                                  'Hochberg (1988) ("hochberg")' = "hochberg", 
+                                  'Hommel (1988) ("hommel")' = "hommel", 
+                                  'Bonferroni correction ("bonferroni")' = "bonferroni", 
+                                  'Benjamini & Hochberg (1995) ("BH" or its alias "fdr")' = "BH", 
+                                  'Benjamini & Yekutieli (2001) ("BY")' = "BY",
+                                  'none' = "none"
+                                ),
+                                selected = NULL
+                   ),
+                   width = 3
+                 ),
+                 
+                 
+                 box (
+                   sliderInput(inputId = "pvalue_prt_domain",
+                               label = h4(
+                                 "Adjusted p-value cutoff",
+                                 tipify(actionBttn(
+                                   inputId = "prt3",
+                                   icon = icon("question"),
+                                   style = "jelly",
+                                   size = "xs",
+                                   block = FALSE,
+                                   no_outline = TRUE
+                                 ), "Thresholding for subsequent analysis (ORA or GSEA)", placement="bottom", trigger = "hover") 
+                               ),
+                               min = 0,
+                               max = 1,
+                               value = 0.05),
+                   width = 6
+                 ),
+                 
+                 
+                 
+                 box (
+                   status = "success",
                    actionButton("Run_protein_domains",h4("Run Protein Domains")),
                    width = 12)
                ),
                
                
-               br(), br(), 
                
+
                
                conditionalPanel(
+                 
+                 
+                 
                  condition = "input.method_prt_domain == 1",
-                
-                 h1(strong("Over-representation (or enrichment) analysis"),  br(),
-                    tags$a(href="https://github.com/AlizeeBardon/shiny_enrichment_analysis","coded method"),
-                    align = "center"),
+                 
+                 box(
+                   title = h3(strong("Over-representation (or enrichment) analysis"),  br(),
+                              tags$a(href="https://github.com/AlizeeBardon/shiny_enrichment_analysis","coded method" , style="color:white"),
+                              align = "center"),
+                   background = "black", solidHeader = TRUE,
+                   width = 12
+                 ),
 
-                 br(), 
-                 h2("Protein domain enrichment - Result table"),
+                 
+                 
                  box (
+                   title = strong("Result table"),
                    dataTableOutput("Table_domains_enrichment"),
+                   br(), br(), 
+                   
+                   sliderInput(inputId = "nb_barplot_ora_coder",
+                               label = strong("Number of protein domains to see in the barplot and dotplot" ),
+                               min = 0,
+                               max = 200,
+                               value = 10),
                    width = 12),
                  
-                  
-                 br(), br(),
-                 
-                 
-                 h2("Protein domain enrichment - BarPlot"),
-                 sliderInput(inputId = "nb_barplot_ora_coder",
-                             label = h4("number of protein to see in the barplot :"  ),
-                             min = 0,
-                             max = 200,
-                             value = 10),
-                 
-
                  box (
+                   title = strong("BarPlot"), 
                    shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
                    width = 6),
                 
                  box (
+                   title = strong("DotPlot"),
                    shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
                    width = 6),
                  
                  box (
+                   title = strong("PieChart"),
                    shinycustomloader::withLoader(plotlyOutput("piechart_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
-                   width = 12),
-                 
-                 # 
-                 # box (
-                 #   #shinycustomloader::withLoader(plotlyOutput("piechart_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
-                 #   title = " Word Cloud ", 
-                 #   wordcloud2Output("word_cloud"),
-                 #   width = 12),
-                 # 
+                   width = 6),
+
                  box (
+                   title = strong("WordCloud"),
                    plotOutput("cloud"),
+                   width = 6),
+                 
+                 
+                 br(), br(),
+                 
+
+                 box(
+                   title = h2( strong("Over-representation (or enrichment) analysis"), 
+                               br(),
+                               tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/enricher","enricher() function from clusterProfiler", style="color:white"),
+                               align = "center"),
+                     
+                   background = "black", solidHeader = TRUE,
+                   width = 12
+                 ),
+                 
+                 box (
+                   title = strong("Result Table"), 
+                   dataTableOutput("Table_domains_enrichment_enricher"), 
                    width = 12),
                  
+                 box (
+                   title = strong("BarPlot"), 
+                   shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment_enricher", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 6),
                  
-                 br(), br(),
+                 box (
+                   title = strong("DotPlot"), 
+                   shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment_enricher", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 6)
                  
-
-                 br(), br(),
-                 
-                 h1( strong("Over-representation (or enrichment) analysis"), 
-                     br(),
-                     tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/enricher","enricher() function from clusterProfiler"),
-                     align = "center"),
-                 br(),
-                 h2("Protein domain enrichment - Result table"),
-                 dataTableOutput("Table_domains_enrichment_enricher"), 
-                 br(),
-                 h2("Protein domain enrichment - BarPlot"),
-                 
-
-                 shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment_enricher", height = "450px"), type = "image", loader = "wait.gif"),
-                 br(),
-                 h2("Protein domain enrichment - DotPlot"),
-                 shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment_enricher", height = "450px"), type = "image", loader = "wait.gif")
                  
                ),
                
                
                conditionalPanel(
                  condition = "input.method_prt_domain == 2",
-                 h1(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method "), 
-                    br(), 
-                    tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/GSEA","GSEA() function from clusterProfiler"),
-                    align = "center"),
-
+                 
+                 box(
+                   title = h2(strong("Gene Set Enrichment Analysis (GSEA) - using the method enricher() from clusterProfiler method"),  br(),
+                              tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/GSEA","GSEA() function from clusterProfiler","coded method", style="color:white"),
+                              align = "center"),
+                   background = "black", solidHeader = TRUE,
+                   width = 12
+                 ),
                  
                  br(), br(),
-                 dataTableOutput("Table_domain_enrichment_GSEA"), 
-                 br(), br(),
                  
-                 "Barplot :",
-                 shinycustomloader::withLoader(plotlyOutput("barplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif"),
+                 box (
+                   title = strong("Result table"),
+                   dataTableOutput("Table_domain_enrichment_GSEA"), 
+                   width = 12),
                  
-                 br(), br(),
-
+                 box (
+                   title = strong("BarPlot"), 
+                   shinycustomloader::withLoader(plotlyOutput("barplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 6),
+                 
+                 box (
+                   title = strong("BarPlot"), 
+                   selectInput(
+                     "protein_id_list", 
+                     label = h4("choose the protein id to display"),
+                     choices = "",
+                     selected = NULL),
+                   shinycustomloader::withLoader(plotlyOutput("gseaplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif"),
+                   width = 12),
                      
-                 selectInput(
-                       "protein_id_list", 
-                       label = h4("choose the protein id to display"),
-                       choices = "",
-                       selected = NULL),
+                 
 
                  
                  br(), br(),
-                 shinycustomloader::withLoader(plotlyOutput("gseaplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif")
+                 
                )  
                
 
