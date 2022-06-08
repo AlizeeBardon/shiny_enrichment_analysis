@@ -2,7 +2,6 @@
 .Rhistory
 .RData
 .Rproj.user
-*.png
 *.xml
 token_access
 sabotage*.csv

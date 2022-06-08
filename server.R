@@ -264,13 +264,7 @@ table_DEG_data <- reactive({
         selectRows(row_clicked)
     }) # fin observe
     
-
-    output$id_toto <- renderDataTable({ 
-      D <- orga_translate_table()
-      DT::datatable(D) 
-    }) # fin renderDataTable({
-
-
+    
     # -------------------------------------------------------------------
     # BODY: tabPanel :GO Term Enrichment --------------------------------
     # -------------------------------------------------------------------
@@ -365,7 +359,8 @@ table_DEG_data <- reactive({
       else {
         data <- gse_kegg()
       }
-      updateSelectInput(session, "paths", choices = data$Description)
+      #updateSelectInput(session, "paths", choices = data$Description)
+      updateSelectInput(session, "paths", choices = data$interpro_ID)
       data.df <- as.data.frame(data)
       DT::datatable(data.df)
     })#fin renderDataTable
@@ -433,11 +428,21 @@ table_DEG_data <- reactive({
          attributes=c('interpro', 'interpro_description', 'ensembl_transcript_id', 'ensembl_gene_id'),
          filters = 'ensembl_gene_id', 
          values = resOrdered$ID, 
+         uniqueRows = FALSE,
          mart = ensembl)
-       head(interpro_id_raw)
-       
        #enlever les valeurs manquantes
        interpro_id  <- subset(interpro_id_raw, interpro_id_raw['interpro'] != "")
+     })
+     
+     comptage_Domains <- eventReactive(input$Run_protein_domains, {
+       interpro_id <- Protein_Domains_data()
+       # combien de fois ce domaine est present dans le set experimental, y compris lorsqu il est present plusieurs fois par proteine
+       nb_domain = as.data.frame(table(interpro_id$interpro))
+       colnames(nb_domain) <- c('interpro','nb_domain') 
+       # combien de proteines du set experimental possedent au moins une fois un domaine X
+       prt_par_domain = as.data.frame(table(unique(interpro_id[c('ensembl_transcript_id','interpro')])$interpro))
+       colnames(prt_par_domain) <- c('interpro','prt_par_domain') 
+       comptage_domains = merge(prt_par_domain, nb_domain, by.x = "interpro", by.y = "interpro")
      })
      
      DEG <-  eventReactive(input$Run_protein_domains, {
@@ -464,13 +469,13 @@ table_DEG_data <- reactive({
        #input data
        resOrdered <- re()
        pvalue <- input$pvalue_prt_domain
-       
        adjustment_method <- input$pvalue_adjustment_prt_domain
-
+      
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        interpro_id <- Protein_Domains_data()
+       comptage_Domains <- comptage_Domains()
        #background
-       GeneRef = na.omit(interpro_id)
+       GeneRef = unique(na.omit(interpro_id[c('interpro','ensembl_gene_id')]))
        summary(GeneRef)
        
        #liste d'interet
@@ -482,10 +487,8 @@ table_DEG_data <- reactive({
        get_Gene_and_Bg_ratio = function(GeneList, GeneRef) {
          # experience (interest list)
          experience = merge(GeneList, GeneRef, by.x = "GeneList", by.y = "ensembl_gene_id")
-         head(experience)
          # x : nb of annotated genes in the interest list
          x = table(experience$interpro)
-
          
          # reference list
          #interpro en commun entre background et liste d'intéret
@@ -502,14 +505,12 @@ table_DEG_data <- reactive({
          k = length(GeneList$GeneList)
          
          Term = unique(row.names(m))
-         interpro_description =unique(interpro_liste_int[match(Term, interpro_liste_int$interpro),]$interpro_description)
          x = as.numeric(x)
          m = as.numeric(m)
          k = as.numeric(k)
          n = as.numeric(n)
          
          return(list(Term = Term, 
-                     interpro_description = interpro_description,
                      x = x, 
                      k = k, 
                      m = m, 
@@ -550,23 +551,23 @@ table_DEG_data <- reactive({
          
          # create dataframe
          table.enrich = data.frame(interpro_ID = Gene.Bg.ratio$Term, 
-                                   Description = Gene.Bg.ratio$interpro_description, 
-                                   pvalue = test$pvalue_fisher.test, 
-                                   padj = test$padj,
-                                   BgRatio = paste0(" (=", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
-                                   GeneRatio = paste0(" (= ", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
-                                   BgRatio_simple = Bg.ratio,
-                                   GeneRatio_simple = Gene.ratio,
-                                   interpro_description = Gene.Bg.ratio$interpro_description,
+                                   pvalue = signif(test$pvalue_fisher.test, 3),
+                                   padj = signif(test$padj, 3),
+                                   BgRatio = Bg.ratio,
+                                   BgRatio_count = paste0(" (", Gene.Bg.ratio$m, "/", Gene.Bg.ratio$n, ")"),
+                                   GeneRatio = Gene.ratio,
+                                   GeneRatio_count = paste0(" (", Gene.Bg.ratio$x, "/", Gene.Bg.ratio$k, ")"),
                                    count = Gene.Bg.ratio$x, 
-                                   count_and_padj = paste0("count: ", Gene.Bg.ratio$x, " (padj: ", Gene.Bg.ratio$k, ")")
-                                   
+                                   count_and_padj = paste0("count: ", Gene.Bg.ratio$x, "\n padj: ", signif(test$padj, 3) )
                                    )
          
          return (table.enrich[order(table.enrich$pval), ])
        }
        res.enrich.hypergeom.prt_dommain = create_table_enrichment(GeneList = GeneList, GeneRef = GeneRef)
-       res.enrich.hypergeom.prt_dommain[which(res.enrich.hypergeom.prt_dommain$padj<pvalue),]
+       result = res.enrich.hypergeom.prt_dommain[which(res.enrich.hypergeom.prt_dommain$padj<pvalue),]
+       
+       res_with_description = merge(result, unique(interpro_id[c('interpro_description','interpro')]), by.x = "interpro_ID", by.y = "interpro")
+       res_with_domains_comptage = merge(res_with_description, comptage_Domains, by.x = "interpro_ID", by.y = "interpro")
        
        } )  
      
@@ -574,18 +575,15 @@ table_DEG_data <- reactive({
      domain_enrichment_ORA_enricher <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 1){
        #input data
        resOrdered <- re()
-       
        pvalue <- input$pvalue_prt_domain
-       
        adjustment_method <- input$pvalue_adjustment_prt_domain
-       
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        interpro_id <- Protein_Domains_data()
-       table_TERM2GENE = interpro_id[,1:2]
-       
+       # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
+
+       table_TERM2GENE = unique(na.omit(interpro_id[c('interpro','ensembl_gene_id')]))
        #gene_list_enricher = resOrdered[which(resOrdered$padj<=pvalue),]$ID
        DEG_under = DEG()
-       
        result_enricher <- enricher(
          gene = unique(DEG_under), 
          pvalueCutoff = pvalue, 
@@ -601,14 +599,12 @@ table_DEG_data <- reactive({
      domain_enrichment_GSEA <-  eventReactive(input$Run_protein_domains, if(input$method_prt_domain == 2){
        #input data
        resOrdered <- re()
-       
        pvalue <- input$pvalue_prt_domain
-       
        adjustment_method <- input$pvalue_adjustment_prt_domain
        
        # recuperation des domain ID pour les ensembl ID de notre jeu de donnees 
        interpro_id <- Protein_Domains_data()
-       table_TERM2GENE = interpro_id[,1:2]
+       table_TERM2GENE = unique(na.omit(interpro_id[c('interpro','ensembl_gene_id')]))
        
        # we want the log2 fold change 
        original_gene_list <- resOrdered$log2FC
@@ -629,19 +625,24 @@ table_DEG_data <- reactive({
          TERM2GENE=table_TERM2GENE)
      })
      
+     # output$Table_domains_enrichment <- renderDataTable( if(input$method_prt_domain == 1){ 
+     #   D <- domain_enrichment_ORA()
+     #   col_a_afficher = c('interpro_ID','interpro_description', 'pvalue', 'padj', 'BgRatio', 'BgRatio_count', 'GeneRatio', 'GeneRatio_count', 'nb_domain', 'prt_par_domain')
+     #   updateSliderInput(session, "nb_barplot_ora_coder", max = nrow(D))
+     #   DT::datatable(D[col_a_afficher]) 
+     # }) # fin renderDataTable({
+     # 
      
-     output$Table_domains_enrichment <- renderDataTable( if(input$method_prt_domain == 1){ 
-       D <- domain_enrichment_ORA()
-       head(D)
-       updateSliderInput(session, "nb_barplot_ora_coder", max = nrow(D))
-       DT::datatable(D[,1:6]) 
-     }) # fin renderDataTable({
-
+     output$Table_domains_enrichment <- DT::renderDataTable(DT::datatable({
+       data <- domain_enrichment_ORA() %>%
+         mutate(interpro_link = paste0("<a href='https://www.ebi.ac.uk/interpro/entry/InterPro/", interpro_ID,"' target='_blank'>", interpro_ID,"</a>"))
+       col_a_afficher = c('interpro_link','interpro_description', 'pvalue', 'padj', 'BgRatio', 'BgRatio_count', 'GeneRatio', 'GeneRatio_count', 'nb_domain', 'prt_par_domain')
+       data[col_a_afficher]
+     },
+     escape = FALSE))
      
      output$barplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
-         
          max <- input$nb_barplot_ora_coder
-         
          D <- domain_enrichment_ORA()
          ggplot(data = D[1:max,], aes(x= count , y = reorder(interpro_ID, count)  ) ) +
            geom_bar(stat = "identity", aes(fill = padj))  +
@@ -654,19 +655,18 @@ table_DEG_data <- reactive({
            labs(y = "Protein Domain (Interpro ID)", x = "Count")
 
      })
-     
 
      output$dotplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
          max <- input$nb_barplot_ora_coder
          D <- domain_enrichment_ORA()
 
-         ggplot(D[1:max,], aes(x=interpro_ID, y=GeneRatio_simple)) +
+         ggplot(D[1:max,], aes(x=interpro_ID, y=GeneRatio)) +
            geom_point(stat='identity', aes(col=padj, size=count), alpha=0.75) +   # Draw points
            scale_colour_viridis_c(option = 'magma') +
            geom_segment(aes(x=interpro_ID,
                             xend=interpro_ID,
-                            y=min(GeneRatio_simple),
-                            yend=max(GeneRatio_simple)
+                            y=min(GeneRatio),
+                            yend=max(GeneRatio)
                             ),
                         linetype="none",
                         size=0.1) +   # Draw dashed lines
@@ -684,13 +684,11 @@ table_DEG_data <- reactive({
        data <- D[,c('interpro_ID', 'count')]
        
        fig <- plot_ly(D, 
-                      labels = ~Description, 
+                      labels = ~interpro_ID, 
                       values = ~count, 
                       type = 'pie',
                       text = ~count_and_padj,
-                      #hovertemplate = "%{labels}: <br>Popularity: %{D$GeneRatio} </br> %{D$padj}"
-                      hovertemplate = paste("<b>%{labels}</b><br>",
-                                            "%{text}<br>")
+                      hovertemplate = paste("%{text}")
                       )
        fig <- fig %>% layout(title = 'Pie chart ',
                              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
@@ -703,9 +701,9 @@ table_DEG_data <- reactive({
      
      output$cloud <- renderPlot({
        D <- domain_enrichment_ORA()
-       data <- D[,c('Description', 'count')]
+       data <- D[,c('interpro_ID', 'count')]
        
-       wordcloud(data$Description, data$count, scale=c(2,0.1),
+       wordcloud(data$interpro_ID, data$count, scale=c(2,0.1),
                      colors=brewer.pal(8, "Dark2"))
      })
      
