@@ -7,7 +7,7 @@
 #
 #BiocManager::install("clusterProfiler")
 #BiocManager::install("pathview")
-#BiocManager::install("pasilla") 
+#BiocManager::install("pasilla")
 #BiocManager::install("biomaRt")
 #BiocManager::install("AnnotationForge")
 
@@ -392,6 +392,16 @@ data_pour_plot <- reactive({
        # Return picture path to load it on popup window
        list(src = path_img)
      }, deleteFile = (!input$download_pathview))
+     
+     output$reactome_plot <- renderPlotly({
+       kegg_data <- kegg_data()
+       result_kegg <- kegg_data$res
+       path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
+       browser()
+       viewPathway(path_id, 
+                   readable = TRUE, 
+                   foldChange = kegg_data$kegg_gene_list)
+     })#Mettre bouton pour sélectionner les paths et lancer les 1 ou 2 plots concernés (GSEAplot et pathview/reactome)
      #Problème avec Dowload / suppression image
      #Ne fonctionne pas avec reactome -->
      # viewPathway("E2F mediated regulation of DNA replication", 
