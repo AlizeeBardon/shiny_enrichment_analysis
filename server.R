@@ -29,7 +29,6 @@ library(DT)
 library(ggplot2)
 library(shinyalert)
 library(ggrepel)
-#library(wordcloud2)
 library(wordcloud)
 
 # Define server 
@@ -645,7 +644,6 @@ table_DEG_data <- reactive({
              vjust = 0.5
            )) +
            labs(y = "Protein Domain (Interpro ID)", x = "Count")
-
      })
 
      output$dotplot_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
@@ -667,44 +665,41 @@ table_DEG_data <- reactive({
                 title = "Dotplot",
                 fill="padj") +
            coord_flip()
-
      })
      
      
      output$piechart_domains_enrichment <- renderPlotly( if(input$method_prt_domain == 1){
        D <- domain_enrichment_ORA()
-       data <- D[,c('interpro_ID', 'count')]
+       data <- D[,c('interpro_description', 'count')]
        
        fig <- plot_ly(D, 
                       labels = ~interpro_ID, 
                       values = ~count, 
                       type = 'pie',
-                      text = ~count_and_padj,
-                      hovertemplate = paste("%{text}")
+                      text = ~count_and_padj
+                      #hovertemplate = paste("%{text}")
                       )
        fig <- fig %>% layout(title = 'Pie chart ',
                              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-
        
        fig
-       
      })
      
      output$cloud <- renderPlot({
        D <- domain_enrichment_ORA()
-       data <- D[,c('interpro_ID', 'count')]
-       
-       wordcloud(data$interpro_ID, data$count, scale=c(2,0.1),
+       data <- D[,c('interpro_description', 'count')]
+       wordcloud(data$interpro_description, data$count, scale=c(4,1),
                      colors=brewer.pal(8, "Dark2"))
      })
      
-     output$Table_domains_enrichment_enricher <- renderDataTable( if(input$method_prt_domain == 1){ 
-       result_enricher <- domain_enrichment_ORA_enricher()
-       D <- as.data.frame(result_enricher)[c(1, 3:7,9)]
-       DT::datatable(D) 
-     }) # fin renderDataTable({
-     
+     output$Table_domains_enrichment_enricher <- DT::renderDataTable(DT::datatable({
+       data <- as.data.frame( domain_enrichment_ORA_enricher() )%>%
+         mutate(interpro_link = paste0("<a href='https://www.ebi.ac.uk/interpro/entry/InterPro/", Description,"' target='_blank'>", Description,"</a>"))
+       col_a_afficher = c('interpro_link','GeneRatio', 'BgRatio', 'p.adjust', 'Count')
+       data[col_a_afficher]
+     },
+     escape = FALSE))
      
      output$dotplot_domains_enrichment_enricher <- renderPlotly( if(input$method_prt_domain == 1){ 
        result_ORA_enricher <- domain_enrichment_ORA_enricher()
@@ -716,14 +711,15 @@ table_DEG_data <- reactive({
        barplot(result_ORA_enricher)
      }) # fin renderDataTable({
      
+     output$Table_domain_enrichment_GSEA <- DT::renderDataTable(DT::datatable({
+       data <- as.data.frame( domain_enrichment_GSEA() )%>%
+         mutate(interpro_link = paste0("<a href='https://www.ebi.ac.uk/interpro/entry/InterPro/", ID,"' target='_blank'>", ID,"</a>"))
+       col_a_afficher = c('interpro_link','setSize', 'enrichmentScore', 'NES', 'pvalue', 'p.adjust', 'rank')
+       updateSelectInput(session, "protein_id_list", choices = data$ID)
+       data[col_a_afficher]
+     },
+     escape = FALSE))
      
-     output$Table_domain_enrichment_GSEA <- renderDataTable( if(input$method_prt_domain == 2){ 
-       result_GSEA <- domain_enrichment_GSEA()
-       D <- as.data.frame(result_GSEA)[c(1, 3:7,9)]
-       
-       updateSelectInput(session, "protein_id_list", choices = D$ID)
-       DT::datatable(D)
-     }) # fin renderDataTable({
      
      output$barplot_domain_enrichment_GSEA <- renderPlotly( if(input$method_prt_domain == 2){ 
        result_GSEA <- domain_enrichment_GSEA()

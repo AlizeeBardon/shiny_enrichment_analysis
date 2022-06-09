@@ -485,8 +485,10 @@ shinyUI(dashboardPage(
                  
                  
                  box (
-                   status = "success",
-                   actionButton("Run_protein_domains",h4("Run Protein Domains")),
+                   actionButton(
+                     "Run_protein_domains",
+                     icon = icon("seedling"),
+                     strong("Run Protein Domains")),
                    width = 12)
                ),
                
