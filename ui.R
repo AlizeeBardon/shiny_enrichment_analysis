@@ -447,7 +447,13 @@ shinyUI(dashboardPage(
                  
                  box (
                    selectInput( inputId = "pvalue_adjustment_prt_domain",
-                                label = h4("Adjustment method:"),
+                                label = h4("Adjustment method: ",
+                                           tipify(actionButton(
+                                             inputId='pval_adj_help', label="Learn More",                           
+                                             icon = icon("question"),   
+                                             onclick ="window.open('https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust', '_blank')"), 
+                                             "Thresholding for subsequent analysis (ORA or GSEA)", placement="bottom", trigger = "hover") 
+                                ),
                                 choices = list(
                                   'Holm (1979) ("holm")' = "holm", 
                                   'Hochberg (1988) ("hochberg")' = "hochberg", 

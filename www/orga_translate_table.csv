@@ -1,20 +1,20 @@
 specie_name;OrgDb;Biomart_Datasets;org_short
-Human ;org.Hs.eg.db,;hsapiens_gene_ensembl;hsa
-Mouse ;org.Mm.eg.db,;mmusculus_gene_ensembl;mmu
-Rat ;org.Rn.eg.db,;rnorvegicus_gene_ensembl;rno
-Yeast ;org.Sc.sgd.db,;scerevisiae_gene_ensembl;sce
-Fly ;org.Dm.eg.db,;dmelanogaster_gene_ensembl;dme
-Arabidopsis ;org.At.tair.db,;;
-Zebrafish ;org.Dr.eg.db,;drerio_gene_ensembl;dre
-Bovine ;org.Bt.eg.db,;btaurus_gene_ensembl;bta
-Worm ;org.Ce.eg.db,;celegans_gene_ensembl;cel
-Chicken ;org.Gg.eg.db,;ggallus_gene_ensembl;gga
-Canine ;org.Cf.eg.db,;clfamiliaris_gene_ensembl;clf
-Pig ;org.Ss.eg.db,;ssusmarc_gene_ensembl;ssu
-Rhesus ;org.Mmu.eg.db,;mmulatta_gene_ensembl;mmu
-E coli strain K12 ;org.EcK12.eg.db,;;
-Xenopus ;org.Xl.eg.db,;csemilaevis_gene_ensembl;cse
-Chimp ;org.Pt.eg.db,;ptroglodytes_gene_ensembl;ptr
-Anopheles ;org.Ag.eg.db,;;
-Malaria ;org.Pf.plasmo.db,;;
+Human ;org.Hs.eg.db;hsapiens_gene_ensembl;hsa
+Mouse ;org.Mm.eg.db;mmusculus_gene_ensembl;mmu
+Rat ;org.Rn.eg.db;rnorvegicus_gene_ensembl;rno
+Yeast ;org.Sc.sgd.db;scerevisiae_gene_ensembl;sce
+Fly ;org.Dm.eg.db;dmelanogaster_gene_ensembl;dme
+Arabidopsis ;org.At.tair.db;;
+Zebrafish ;org.Dr.eg.db;drerio_gene_ensembl;dre
+Bovine ;org.Bt.eg.db;btaurus_gene_ensembl;bta
+Worm ;org.Ce.eg.db;celegans_gene_ensembl;cel
+Chicken ;org.Gg.eg.db;ggallus_gene_ensembl;gga
+Canine ;org.Cf.eg.db;clfamiliaris_gene_ensembl;clf
+Pig ;org.Ss.eg.db;ssusmarc_gene_ensembl;ssu
+Rhesus ;org.Mmu.eg.db;mmulatta_gene_ensembl;mmu
+E coli strain K12 ;org.EcK12.eg.db;;
+Xenopus ;org.Xl.eg.db;csemilaevis_gene_ensembl;cse
+Chimp ;org.Pt.eg.db;ptroglodytes_gene_ensembl;ptr
+Anopheles ;org.Ag.eg.db;;
+Malaria ;org.Pf.plasmo.db;;
 E coli strain Sakai ;org.EcSakai.eg.db;scerevisiae_gene_ensembl;sce
