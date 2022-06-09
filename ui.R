@@ -307,7 +307,7 @@ shinyUI(dashboardPage(
                      radioGroupButtons("db", label = h3("DataBase"),
                                        choices = list(
                                          "KEGG" = 1, 
-                                         "REACTOME (you can try, but it doesn't work...)" = 2), 
+                                         "REACTOME" = 2), 
                                        direction = "vertical"),
                      width = 5
                    ),
@@ -369,12 +369,20 @@ shinyUI(dashboardPage(
                mainPanel(title = "GSE Plot", status = "warning", solidHeader = TRUE, width = 12, height = "550px",
                          shinycustomloader::withLoader(plotlyOutput("method_kegg", height = "450px"), type = "image", loader = "wait.gif")
                ),
-              
-               sidebarLayout(
-                 sidebarPanel(selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL),actionButton("go", "Generate pathway with pathview")),
-                 mainPanel(
-                   bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
+               conditionalPanel(
+                 condition = "input.db == 1",
+                 sidebarLayout(
+                   sidebarPanel(selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), checkboxInput("download_pathview", label = "Download", value = FALSE), actionButton("go", "Generate pathway with pathview")),
+                   mainPanel(
+                     bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
+                   )
                  )
+               ),
+               
+               conditionalPanel(
+                 condition = "input.db == 2",
+                 box(title = "Reactome network", status = "warning", solidHeader = TRUE, width = 12, height = "550px", selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), 
+                           shinycustomloader::withLoader(plotlyOutput("reactome_plot", height = "450px"), type = "image", loader = "wait.gif"))
                )
                ), # tabPanel("Pathway Enrichment"
 

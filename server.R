@@ -7,7 +7,7 @@
 #
 #BiocManager::install("clusterProfiler")
 #BiocManager::install("pathview")
-#BiocManager::install("pasilla") 
+#BiocManager::install("pasilla")
 #BiocManager::install("biomaRt")
 #BiocManager::install("AnnotationForge")
 
@@ -28,6 +28,7 @@ library(highcharter)
 library(DT)
 library(ggplot2)
 library(shinyalert)
+library(ReactomePA)
 library(ggrepel)
 library(wordcloud)
 
@@ -287,10 +288,12 @@ table_DEG_data <- reactive({
     # Annotation Table
     
     kegg_data <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
-      data <- re() 
-      organism = espece()
+      data <- re()
+      espece_id <- espece_id()
+      orga_translate_table <- orga_translate_table()
+      # organism = espece()
       adj_method <- input$kegg_adj_method
-      ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organism)
+      ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=orga_translate_table[espece_id,2])
       dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
       
       df2 = data[data$ID %in% dedup_ids$ENSEMBL,]
@@ -307,101 +310,132 @@ table_DEG_data <- reactive({
       kegg_gene_list<-na.omit(kegg_gene_list)
       # sort the list in decreasing order (required for clusterProfiler)
       kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
-      list(kegg_gene_list=kegg_gene_list, df2=df2, adj_method=adj_method)
+      #Method to use for gene set analysis
+      if(input$method == 2){
+        res <- gse_kegg(kegg_gene_list, adj_method, orga_translate_table[espece_id,])
+      }
+      if(input$method == 1){
+        res <- ora_kegg(df2, kegg_gene_list, adj_method, orga_translate_table[espece_id,])
+      }
+      list(res =res, kegg_gene_list=kegg_gene_list)
     })
     
    
-    gse_kegg <- reactive({
-      gse_kegg_data <- kegg_data()
-      gse_kegg_annal <- gseKEGG(geneList     = gse_kegg_data$kegg_gene_list,
-                          organism     = "mmu",
-                          nPerm        = 10000,
-                          minGSSize    = 3,
-                          maxGSSize    = 800,
-                          pvalueCutoff = input$pvalue_gsea,
-                          pAdjustMethod = gse_kegg_data$adj_method,
-                          keyType       = "ncbi-geneid")
-    })
+    gse_kegg <- function(kegg_gene_list, adj_method, orga_translate_table) {
+      #Database to use for annotation
+      if (input$db == 1){
+      gse_result <- gseKEGG(geneList     = kegg_gene_list,
+                            organism     = orga_translate_table[1,4],
+                            nPerm        = 10000,
+                            minGSSize    = 3,
+                            maxGSSize    = 800,
+                            pvalueCutoff = input$pvalue_gsea,
+                            pAdjustMethod = adj_method,
+                            keyType       = "ncbi-geneid")
+      }
+      else {
+      gse_result <- gsePathway(geneList     = kegg_gene_list,
+                                organism     = orga_translate_table[1,5],
+                                nPerm        = 10000,
+                                minGSSize    = 3,
+                                maxGSSize    = 800,
+                                pvalueCutoff = input$pvalue_gsea,
+                                pAdjustMethod = adj_method)
+      }
+      return(gse_result)
+    }
      
     
-    ora_kegg <- reactive({
-      ora_kegg_data <- kegg_data()
-      # Exctract significant results from df2
-      kegg_sig_genes_df = subset(ora_kegg_data$df2, padj < 0.05)
-
-      # From significant results, we want to filter on log2fold change
-
-      kegg_genes <- kegg_sig_genes_df$log2FC
-
-      # Name the vector with the CONVERTED ID!
-      names(kegg_genes) <- kegg_sig_genes_df$Y
-
-      # omit NA values
-      kegg_genes <- na.omit(kegg_genes)
-      # filter on log2fold change (under or over expressed DEG)
-      if (input$type == 1){
-        kegg_genes <- names(kegg_genes)[kegg_genes > 0]
-      }
-      else if(input$type == 2) {
-        kegg_genes <- names(kegg_genes)[kegg_genes < 0]
-      }
-      else {
-        kegg_genes <- names(kegg_genes)
-      }
-       kk <- enrichKEGG(gene=kegg_genes, universe=names(ora_kegg_data$kegg_gene_list),organism='mmu', pvalueCutoff = input$pvalue_gsea, keyType = "ncbi-geneid", pAdjustMethod = ora_kegg_data$adj_method)
-    })
+    ora_kegg <- function(df2, kegg_gene_list, adj_method, orga_translate_table) {
+        # Exctract significant results from df2
+        kegg_sig_genes_df = subset(df2, padj < 0.05)
+  
+        # From significant results, we want to filter on log2fold change
+  
+        kegg_genes <- kegg_sig_genes_df$log2FC
+  
+        # Name the vector with the CONVERTED ID!
+        names(kegg_genes) <- kegg_sig_genes_df$Y
+  
+        # omit NA values
+        kegg_genes <- na.omit(kegg_genes)
+        # filter on log2fold change (under or over expressed DEG)
+        if (input$type == 1){
+          kegg_genes <- names(kegg_genes)[kegg_genes > 0]
+        }
+        else if(input$type == 2) {
+          kegg_genes <- names(kegg_genes)[kegg_genes < 0]
+        }
+        else {
+          kegg_genes <- names(kegg_genes)
+        }
+        
+        #Database to use for annotation
+        if (input$db == 1){
+          ora_result <- enrichKEGG(gene=kegg_genes, universe=names(kegg_gene_list),organism=orga_translate_table[1,4], pvalueCutoff = input$pvalue_gsea, keyType = "ncbi-geneid", pAdjustMethod = adj_method)
+        }
+        else {
+          ora_result <- enrichPathway(gene=kegg_genes, universe=names(kegg_gene_list),organism=orga_translate_table[1,4], pvalueCutoff = input$pvalue_gsea, pAdjustMethod = adj_method)
+        }
+         return(ora_result)
+        }
     
     output$enrichKEGG_table <- renderDataTable({
-      if (input$method == 1){
-        data <- ora_kegg()
-      }
-      else {
-        data <- gse_kegg()
-      }
-      #updateSelectInput(session, "paths", choices = data$Description)
-      updateSelectInput(session, "paths", choices = data$interpro_ID)
+      kegg_data <- kegg_data()
+      data <- kegg_data$res
+      updateSelectInput(session, "paths", choices = data$Description)
       data.df <- as.data.frame(data)
       DT::datatable(data.df)
     })#fin renderDataTable
     
      output$dotplot_kegg <- renderPlotly({
-       if(input$method == 1){
-         result_kegg <- ora_kegg()
-       }
-       else {
-         result_kegg <- gse_kegg()
-       }
+       kegg_data <- kegg_data()
+       result_kegg <- kegg_data$res
        dotplot(result_kegg, showCategory = 10, title = "Enriched Pathways")
      })
 
 
      output$method_kegg <- renderPlotly({
+       kegg_data <- kegg_data()
+       result_kegg <- kegg_data$res
        if (input$method == 1){
-         result_kegg <- ora_kegg()
          barplot(result_kegg, showCategory = 10)
        }
        else {
-         result_kegg <- gse_kegg()
          gseaplot(result_kegg, by = "all", title =input$paths, geneSetID = result_kegg[result_kegg$Description==input$paths,]$ID)
        }
      })
 
+     # output$pathview_kegg <- renderImage({
+     #   # Return picture path to load it on popup window
+     #   list(src = "www/wait.gif")
+     # }, deleteFile = FALSE)
+     
      output$pathview_kegg <- renderImage({
-       if (input$method == 1){
-         result_kegg <- ora_kegg()
-       }
-       else {
-         result_kegg <- gse_kegg()
-       }
        kegg_data <- kegg_data()
+       result_kegg <- kegg_data$res
        path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
-
        # Make and save picture of pathway with pathview
-       pathview(cpd.data=kegg_data$kegg_gene_list, pathway.id=path_id, species = "mmu")
-       path_img<-paste("./",path_id,".png", sep="")
+       pathview(gene.data=kegg_data$kegg_gene_list, pathway.id=path_id, species = "mmu")
+       path_img<-paste("./",path_id,".pathview.png", sep="")
        # Return picture path to load it on popup window
        list(src = path_img)
-     }, deleteFile = TRUE)
+     }, deleteFile = (!input$download_pathview))
+     
+     output$reactome_plot <- renderPlotly({
+       kegg_data <- kegg_data()
+       result_kegg <- kegg_data$res
+       path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
+
+       viewPathway(path_id, 
+                   readable = TRUE, 
+                   foldChange = kegg_data$kegg_gene_list)
+     })#Mettre bouton pour sélectionner les paths et lancer les 1 ou 2 plots concernés (GSEAplot et pathview/reactome)
+     #Problème avec Dowload / suppression image
+     #Ne fonctionne pas avec reactome -->
+     # viewPathway("E2F mediated regulation of DNA replication", 
+     #             readable = FALSE, 
+     #             foldChange = geneList)
 
 
      # -------------------------------------------------------------------
@@ -504,6 +538,8 @@ table_DEG_data <- reactive({
          k = length(GeneList$GeneList)
          
          Term = unique(row.names(m))
+
+         interpro_description =unique(interpro_liste_int[match(Term, interpro_liste_int$interpro),]$interpro_description) 
          x = as.numeric(x)
          m = as.numeric(m)
          k = as.numeric(k)
