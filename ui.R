@@ -89,32 +89,31 @@ shinyUI(dashboardPage(
     sidebarMenu(id="tabs",
                 fileInput("file1", 
                           label = h4( 
-                                     tipify(actionLink(
-                                       inputId = "choose_csv_file",
-                                       label = "Choose CSV File" ,
-                                       style = "simple",
-                                       size = "md",
-                                       block = FALSE,
-                                       no_outline = TRUE
-                                     ), "please choose a .csv document the document must be composed  of 5 columns (ID, baseMean, log2FC, pval, padj)", 
-                                     placement="bottom", 
-                                     trigger = "hover"), 
-                                     ),
+                            tipify(actionLink(
+                              inputId = "choose_csv_file",
+                              label = "Choose CSV File" ,
+                              style = "simple",
+                              size = "md",
+                              block = FALSE,
+                              no_outline = TRUE
+                            ), "please choose a .csv document the document must be composed  of 5 columns (ID, baseMean, log2FC, pval, padj)", 
+                            placement="bottom", 
+                            trigger = "hover")
+                          ),
                           
                           accept = c(
                             "text/csv",
                             "text/comma-separated-values,text/plain",
                             ".csv")
                 ),
-               
+                
                 menuItem(
-                 "Input exemple",
-                 icon = icon("table"),
-                 br(),
-                 img(src = "cadre_exemple_input.png", width = 400),
-                 br(),br(),
-                 downloadButton('download_exemple',  "Exemple", status = "primary",)
-                 
+                  "Input exemple",
+                  icon = icon("table"),
+                  br(),
+                  img(src = "cadre_exemple_input.png", width = 400),
+                  br(),br(),
+                  downloadButton('download_exemple',  "Exemple", status = "primary")
                 ),
                 
                 br(),br(),
@@ -123,50 +122,47 @@ shinyUI(dashboardPage(
                 selectInput( "espece_id",
                              label = h4("Choose organism:"),
                              choices = list(
-                               "Human (org.Hs.eg.db)"=1,
-                               "Mouse (org.Mm.eg.db)"=2,
-                               "Rat (org.Rn.eg.db)"=3,
-                               "Yeast (org.Sc.sgd.db)"=4,
-                               "Fly (org.Dm.eg.db)"=5,
-                               "Arabidopsis (org.At.tair.db)"=6,
-                               "Zebrafish (org.Dr.eg.db)"=7,
-                               "Bovine (org.Bt.eg.db)"=8,
-                               "Worm (org.Ce.eg.db)"=9,
-                               "Chicken (org.Gg.eg.db)"=10,
-                               "Canine (org.Cf.eg.db)"=11,
-                               "Pig (org.Ss.eg.db)"=12,
-                               "Rhesus (org.Mmu.eg.db)"=13,
-                               "E coli strain K12 (org.EcK12.eg.db)"=14,
-                               "Xenopus (org.Xl.eg.db)"=15,
-                               "Chimp (org.Pt.eg.db)"=16,
-                               "Anopheles (org.Ag.eg.db)"=17,
-                               "Malaria (org.Pf.plasmo.db)"=18,
-                               "E coli strain Sakai (org.EcSakai.eg.db)"=19
+                               "Human"=1,
+                               "Mouse"=2,
+                               "Rat "=3,
+                               "Yeast"=4,
+                               "Fly"=5,
+                               "Arabidopsis"=6,
+                               "Zebrafish"=7,
+                               "Bovine"=8,
+                               "Worm"=9,
+                               "Chicken"=10,
+                               "Canine"=11,
+                               "Pig"=12,
+                               "Rhesus"=13,
+                               "E coli strain K12"=14,
+                               "Xenopus"=15,
+                               "Chimp"=16,
+                               "Anopheles"=17,
+                               "Malaria"=18,
+                               "E coli strain Sakai"=19
                              ),
                              selected = NULL
-                             
                 ) ,
                 
-
                 br(),
-                
                 
                 menuItem(
                   "Annotation Information ?",
                   h5("Make sure you select the ", br(), "species that matches  your dataset"),
                   h5("If it is not in the list, we advise", br(), " to choose the most phylogenetically ", br(), "related species")
                 ) #menuItem
-
+                
                 
     )
   ), # fin dashboardSidebar
   
   
   # BODY --------------------------------------------------------------------
- 
+  
   
   dashboardBody(
-
+    
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "custom_shinyapp.css")
     ),   
@@ -176,15 +172,16 @@ shinyUI(dashboardPage(
       # BODY: tabPanel : Whole Data Analysis --------------------------------
       
       tabPanel("Whole Data Inspection",
-            
+               
                br(), br(),
+               
                
                box(
                  title = "Parameters - Whole Data Inspection", 
                  closable = TRUE, 
-                 status = "primary",
+                 status = "success",
                  width = 12,
-                 solidHeader = FALSE, 
+                 solidHeader = TRUE, 
                  collapsible = TRUE,
                  box (  
                    sliderInput(inputId = "pvalue",
@@ -208,8 +205,16 @@ shinyUI(dashboardPage(
                      icon = icon("seedling"),
                      strong("Run Whole Data Inspection")),
                    width = 12)
-                 
-                 
+               ),
+               
+               box(
+                 h1(
+                   img(src = "hello.gif", width = "100 e", style="margin-right:100px; margin-left:100px;"),
+                   strong(" Whole Data Inspection - Result"),
+                   img(src = "hello.gif", width = "100 e", style="margin-right:100px; margin-left:100px;"),
+                   align = "center"),
+                 background = "black",
+                 width = 12
                ),
                
                box (
@@ -235,9 +240,9 @@ shinyUI(dashboardPage(
                  shinycustomloader::withLoader(plotlyOutput("MAPlot_plotly", height = "450px"), type = "image", loader = "wait.gif"),
                  width = 6
                ), #fin box
-
                
-
+               
+               
                box (
                  title = "DEG (using padj and log2FC cutoff selected) used for subsequent analysis",
                  closable = TRUE, 
@@ -249,7 +254,7 @@ shinyUI(dashboardPage(
                  width = 12),
                
                box (
-                 title = "Selected data (points selected on the plot (Volcanoplot or MaPlot)",
+                 title = "Points selected on the plot (Volcanoplot or MaPlot)",
                  closable = TRUE, 
                  collapsible = TRUE,
                  collapsed = TRUE,
@@ -257,28 +262,27 @@ shinyUI(dashboardPage(
                  dataTableOutput("Table_data_selected"), 
                  downloadButton('download_Table_data_selected', icon = icon("leaf"), "Download"),
                  width = 12),
-            
                dataTableOutput("id_toto")
       ), # tabPanel("Whole Data Analysis"
-    
+      
       
       # BODY: tabPanel : GO Term Enrichment --------------------------------
       
       tabPanel("GO Term Enrichment",
-      
+               
                br(), br(),
                
                box(
                  title = "Parameters - GO Term Enrichment", 
                  closable = TRUE, 
-                 status = "primary",
+                 status = "success",
                  width = 12,
-                 solidHeader = FALSE, 
+                 solidHeader = TRUE, 
                  collapsible = TRUE
                )
                
       ),
-
+      
       # BODY: tabPanel : Pathway Enrichment -------------------------------- 
       
       tabPanel("Pathway Enrichment", 
@@ -286,54 +290,54 @@ shinyUI(dashboardPage(
                br(), br(),
                
                box(
-                   title = "Parameters - Pathway Enrichment", 
-                   closable = TRUE, 
-                   status = "primary",
-                   width = 12,
-                   solidHeader = FALSE, 
-                   collapsible = TRUE,
+                 title = "Parameters - Pathway Enrichment", 
+                 closable = TRUE, 
+                 status = "success",
+                 width = 12,
+                 solidHeader = TRUE, 
+                 collapsible = TRUE,
+                 
+                 box(
+                   radioGroupButtons("method", label = h3("Analysis method"),
+                                     choices = list(
+                                       "Over epresentation analysis (ORA)" = 1, 
+                                       "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                     direction = "vertical"),
+                   width = 4
+                 ),
+                 
+                 box(
                    
-                   box(
-                     radioGroupButtons("method", label = h3("Analysis method"),
-                                       choices = list(
-                                         "Over epresentation analysis (ORA)" = 1, 
-                                         "Gene Set Enrichment Analysis (GSEA)" = 2), 
-                                       direction = "vertical"),
-                     width = 4
-                   ),
+                   radioGroupButtons("db", label = h3("DataBase"),
+                                     choices = list(
+                                       "KEGG" = 1, 
+                                       "REACTOME" = 2), 
+                                     direction = "vertical"),
+                   width = 5
+                 ),
+                 
+                 box(
+                   radioGroupButtons("type", label = h3("DEG type:"), 
+                                     choices = list(
+                                       "Over expressed DEG only" = 1, 
+                                       "Under expressed DEG only" = 2, 
+                                       "Both" = 3), 
+                                     direction = "vertical"),
+                   width = 3
+                 ),
+                 
+                 box(
                    
-                   box(
-                     
-                     radioGroupButtons("db", label = h3("DataBase"),
-                                       choices = list(
-                                         "KEGG" = 1, 
-                                         "REACTOME" = 2), 
-                                       direction = "vertical"),
-                     width = 5
-                   ),
-                   
-                   box(
-                     radioGroupButtons("type", label = h3("DEG type:"), 
-                                       choices = list(
-                                         "Over expressed DEG only" = 1, 
-                                         "Under expressed DEG only" = 2, 
-                                         "Both" = 3), 
-                                       direction = "vertical"),
-                     width = 3
-                   ),
-                   
-                   box(
-  
                    sliderInput(inputId = "pvalue_gsea",
                                label = "pvalue cutoff for enrichment analysis",
                                min = 0,
                                max = 0.25,
                                value = 0.05),
-                  width = 7
-                  ),
-                   
-                   
-                   box(
+                   width = 7
+                 ),
+                 
+                 
+                 box(
                    selectInput( inputId = "kegg_adj_method",
                                 label = h4("Adjustment method:"),
                                 choices = list(
@@ -347,18 +351,18 @@ shinyUI(dashboardPage(
                                 ),
                                 selected = 'none'),
                    width = 3
-                   ),
-                   
-                   box(
-                     actionButton("Run_Annotation_ENSEMBL_to_GO","Run"),
-                     width = 2
-                   )
-                   
-                   
+                 ),
+                 
+                 box(
+                   actionButton("Run_Annotation_ENSEMBL_to_GO","Run"),
+                   width = 2
+                 )
+                 
+                 
                ),
                
                box (title = "Gene annotation with KEGG",
-                 dataTableOutput("enrichKEGG_table"), 
+                    dataTableOutput("enrichKEGG_table"), 
                     width = 12, style = "overflow-x: scroll;"),
                
                box(tstatus = "warning", solidHeader = TRUE, width = 12, height = "550px",
@@ -382,14 +386,14 @@ shinyUI(dashboardPage(
                conditionalPanel(
                  condition = "input.db == 2",
                  box(title = "Reactome network", status = "warning", solidHeader = TRUE, width = 12, height = "550px", selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), 
-                           shinycustomloader::withLoader(plotlyOutput("reactome_plot", height = "450px"), type = "image", loader = "wait.gif"))
+                     shinycustomloader::withLoader(plotlyOutput("reactome_plot", height = "450px"), type = "image", loader = "wait.gif"))
                )
-               ), # tabPanel("Pathway Enrichment"
-
-
+      ), # tabPanel("Pathway Enrichment"
+      
+      
       
       # BODY: tabPanel : Protein Domain Enrichment -------------------------------- 
-
+      
       tabPanel("Protein Domain Enrichment",
                
                br(),
@@ -404,7 +408,7 @@ shinyUI(dashboardPage(
                  solidHeader = TRUE, 
                  collapsible = TRUE,
                  
-
+                 
                  br(),
                  
                  box (
@@ -447,8 +451,8 @@ shinyUI(dashboardPage(
                                     "Over expressed DEG only" = "Over", 
                                     "Under expressed DEG only" = "Under" 
                                   ),
-                                  selected = NULL),
-                     ), 
+                                  selected = NULL)
+                   ), 
                    width = 3
                  ),
                  
@@ -506,25 +510,20 @@ shinyUI(dashboardPage(
                    width = 12)
                ),
                
-               
-               
-
-               
                conditionalPanel(
-                 
-                 
                  
                  condition = "input.method_prt_domain == 1",
                  
                  box(
-                   title = h3(strong("Over-representation (or enrichment) analysis"),  br(),
-                              tags$a(href="https://github.com/AlizeeBardon/shiny_enrichment_analysis","coded method" , style="color:white"),
-                              align = "center"),
+                   h1(
+                     img(src = "tea.gif", width = "100 e", style="margin-right:50px; margin-left:10px;"),
+                     strong(tags$a(href="https://github.com/AlizeeBardon/shiny_enrichment_analysis","Over-representation (or enrichment) analysis (code link)" , style="color:white")),
+                     img(src = "tea.gif", width = "100 e", style="margin-right:10px; margin-left:50px;"),
+                     align = "center"),
+                   
                    background = "black", solidHeader = TRUE,
                    width = 12
                  ),
-
-                 
                  
                  box (
                    title = strong("Result table"),
@@ -542,7 +541,7 @@ shinyUI(dashboardPage(
                    title = strong("BarPlot"), 
                    shinycustomloader::withLoader(plotlyOutput("barplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
                    width = 6),
-                
+                 
                  box (
                    title = strong("DotPlot"),
                    shinycustomloader::withLoader(plotlyOutput("dotplot_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
@@ -552,22 +551,23 @@ shinyUI(dashboardPage(
                    title = strong("PieChart"),
                    shinycustomloader::withLoader(plotlyOutput("piechart_domains_enrichment", height = "450px"), type = "image", loader = "wait.gif"),
                    width = 6),
-
+                 
                  box (
                    title = strong("WordCloud"),
-                   plotOutput("cloud"),
+                   shinycustomloader::withLoader(plotOutput("cloud", height = "450px"), type = "image", loader = "wait.gif"),
+                   
                    width = 6),
                  
                  
                  br(), br(),
                  
-
+                 
                  box(
                    title = h2( strong("Over-representation (or enrichment) analysis"), 
                                br(),
                                tags$a(href="https://www.rdocumentation.org/packages/clusterProfiler/versions/3.0.4/topics/enricher","enricher() function from clusterProfiler", style="color:white"),
                                align = "center"),
-                     
+                   
                    background = "black", solidHeader = TRUE,
                    width = 12
                  ),
@@ -618,24 +618,69 @@ shinyUI(dashboardPage(
                    title = strong("BarPlot"), 
                    selectInput(
                      "protein_id_list", 
-                     label = h4("choose the protein id to display"),
+                     label = h4("choose the protein domain to display"),
                      choices = "",
                      selected = NULL),
                    shinycustomloader::withLoader(plotlyOutput("gseaplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif"),
-                   width = 12),
-                     
-                 
-
-                 
-                 br(), br(),
-                 
+                   width = 12)
                )  
                
-
-               
-                   
-      ) # tabPanel("Protein Domain Enrichment"
+      ), # tabPanel("Protein Domain Enrichment"
       
+      tabPanel("Summary", 
+               br(), br(), 
+               
+               
+               
+               br(), br(), 
+               
+               tabBox(
+                 title = "To go further - Some useful links",
+                 
+                 # The id lets us use input$tabset1 on the server to find the current tab
+                 id = "tabset1", width = "1000px",
+                 tabPanel("BarPlot", 
+                          "First tab content",
+                          img(src = "Functional-and-protein-domain-enrichment-analysis-of-the-genes-significantly-regulated.png", width = "900 e")
+                          ),
+                 tabPanel("Tab2", 
+                          "Manahattan plot",
+                          img(src = "gost.png", width = "900 e"),
+                          tags$a(href="https://biit.cs.ut.ee/gprofiler/page/docs","Source: g:Profiler"),
+                          
+                          )
+               ),
+               
+               box(
+                 h1(
+                   img(src = "tea.gif", width = "100 e", style="margin-right:50px; margin-left:10px;"),
+                   "Summary for ORA (only KEGG and Protein Domains)", 
+                   img(src = "tea.gif", width = "100 e", style="margin-right:10px; margin-left:50px;"),
+                   align = "center"),
+                 
+                 background = "black", solidHeader = TRUE,
+                 width = 12
+               ),
+               
+               box (
+                 actionButton(
+                   "Run_Summary",
+                   icon = icon("seedling"),
+                   strong("Run Summary")),
+                 width = 12),
+               
+               
+               box (
+                 title = strong("Result Table"), 
+                 dataTableOutput("Table_summary"), 
+                 width = 12),
+               
+               box (
+                 title = strong("Summary of the ORA result for KEGG and Protein Domains - BarPlot"), 
+                 shinycustomloader::withLoader(plotlyOutput("bar_plot_summary", height = "8000px"), type = "image", loader = "wait.gif"),
+                 width = 6)
+               
+               )
       
     ) # fin tabsetPanel
     
