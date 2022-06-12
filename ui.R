@@ -20,6 +20,7 @@ library(shinyBS)
 library(ggridges)
 library(shinycustomloader)
 library(viridis)
+library(tableHTML)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -98,7 +99,7 @@ shinyUI(dashboardPage(
                                        no_outline = TRUE
                                      ), "please choose a .csv document the document must be composed  of 5 columns (ID, baseMean, log2FC, pval, padj)", 
                                      placement="bottom", 
-                                     trigger = "hover"), 
+                                     trigger = "hover") 
                                      ),
                           
                           accept = c(
@@ -113,7 +114,7 @@ shinyUI(dashboardPage(
                  br(),
                  img(src = "cadre_exemple_input.png", width = 400),
                  br(),br(),
-                 downloadButton('download_exemple',  "Exemple", status = "primary",)
+                 downloadButton('download_exemple',  "Exemple", status = "primary")
                  
                 ),
                 
@@ -355,35 +356,43 @@ shinyUI(dashboardPage(
                    )
                    
                    
-               ),
+                 ),
+                 
+                 box (title = "Gene annotation with KEGG",
+                      shinycustomloader::withLoader(dataTableOutput("enrichKEGG_table"), type = "image", loader = "wait.gif"), 
+                      width = 12, style = "overflow-x: scroll;"),
+                 
+                 box(tstatus = "warning", solidHeader = TRUE, width = 12, height = "550px",
+                     shinycustomloader::withLoader(plotlyOutput("dotplot_kegg", height = "450px"), type = "image", loader = "wait.gif")
+                 ),
                
-               box (title = "Gene annotation with KEGG",
-                 dataTableOutput("enrichKEGG_table"), 
-                    width = 12, style = "overflow-x: scroll;"),
+                 conditionalPanel(
+                   condition = "input.method == 1",
+                   box(status = "warning", solidHeader = TRUE, width = 12, height = "550px",
+                       shinycustomloader::withLoader(plotlyOutput("barplot_kegg", height = "450px"), type = "image", loader = "wait.gif"))
+                 ),
+                 
+
+                 conditionalPanel(
+                   condition = "input.db == 1",
+                   box(title = "Pathview network", status = "warning", solidHeader = TRUE, width = 12, height = "800px", selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), 
+                       checkboxInput("download_pathview", label = "Download", value = FALSE), actionButton("go", "Analyse pathway"), 
+                   shinycustomloader::withLoader(imageOutput('pathview_kegg'), type = "image", loader = "wait.gif"))
+                   ),
                
-               box(tstatus = "warning", solidHeader = TRUE, width = 12, height = "550px",
-                   shinycustomloader::withLoader(plotlyOutput("dotplot_kegg", height = "450px"), type = "image", loader = "wait.gif")
-               ),
+
+                 conditionalPanel(
+                   condition = "input.db == 2",
+                   box(title = "Reactome network", status = "warning", solidHeader = TRUE, width = 12, height = "550px",selectInput("paths_reactome", label = h4("Choose a pathway"),choices = "",selected = NULL), actionButton("goreactome", "Analyse pathway"), 
+                       shinycustomloader::withLoader(plotlyOutput("reactome_plot", height = "450px"), type = "image", loader = "wait.gif"))
+                 ),
                
-               
-               mainPanel(title = "GSE Plot", status = "warning", solidHeader = TRUE, width = 12, height = "550px",
-                         shinycustomloader::withLoader(plotlyOutput("method_kegg", height = "450px"), type = "image", loader = "wait.gif")
-               ),
                conditionalPanel(
-                 condition = "input.db == 1",
-                 sidebarLayout(
-                   sidebarPanel(selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), checkboxInput("download_pathview", label = "Download", value = FALSE), actionButton("go", "Generate pathway with pathview")),
-                   mainPanel(
-                     bsModal("modalExample", "KEGG PATHWAY", "go", imageOutput("pathview_kegg"))
-                   )
-                 )
-               ),
-               
-               conditionalPanel(
-                 condition = "input.db == 2",
-                 box(title = "Reactome network", status = "warning", solidHeader = TRUE, width = 12, height = "550px", selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), 
-                           shinycustomloader::withLoader(plotlyOutput("reactome_plot", height = "450px"), type = "image", loader = "wait.gif"))
+                 condition = "input.method == 2",
+                 box(title = "GSEA plot",status = "warning", solidHeader = TRUE, width = 12, height = "550px",
+                     shinycustomloader::withLoader(plotlyOutput("gsea_kegg", height = "450px"), type = "image", loader = "wait.gif"))
                )
+               
                ), # tabPanel("Pathway Enrichment"
 
 
@@ -583,8 +592,6 @@ shinyUI(dashboardPage(
                  
                  
                ),
-               
-               
                conditionalPanel(
                  condition = "input.method_prt_domain == 2",
                  
@@ -616,25 +623,10 @@ shinyUI(dashboardPage(
                      choices = "",
                      selected = NULL),
                    shinycustomloader::withLoader(plotlyOutput("gseaplot_domain_enrichment_GSEA", height = "450px"), type = "image", loader = "wait.gif"),
-                   width = 12),
-                     
-                 
-
-                 
-                 br(), br(),
-                 
-               )  
-               
-
-               
-                   
-      ) # tabPanel("Protein Domain Enrichment"
-      
-      
+                   width = 12)
+               )
+      )# tabPanel("Protein Domain Enrichment"
     ) # fin tabsetPanel
-    
   ) # fin dashboardBody(
-  
-  
-) # fin dashboardPage(
+  ) # fin dashboardPage(
 ) # fin shinyUI(

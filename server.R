@@ -124,6 +124,10 @@ data_pour_plot <- eventReactive(input$Run_whole_data_inspection, {
   req(df)
 })
 
+reactome_path <- eventReactive(input$goreactome, {
+  req(input$paths_reactome)
+})
+
 table_DEG_data <- reactive({
   D <- data_pour_plot()  
   pvalue <- pvalue()
@@ -369,13 +373,12 @@ table_DEG_data <- reactive({
         else {
           kegg_genes <- names(kegg_genes)
         }
-        
         #Database to use for annotation
         if (input$db == 1){
           ora_result <- enrichKEGG(gene=kegg_genes, universe=names(kegg_gene_list),organism=orga_translate_table[1,4], pvalueCutoff = input$pvalue_gsea, keyType = "ncbi-geneid", pAdjustMethod = adj_method)
         }
         else {
-          ora_result <- enrichPathway(gene=kegg_genes, universe=names(kegg_gene_list),organism=orga_translate_table[1,4], pvalueCutoff = input$pvalue_gsea, pAdjustMethod = adj_method)
+          ora_result <- enrichPathway(gene=kegg_genes, universe=names(kegg_gene_list),organism=orga_translate_table[1,5], pvalueCutoff = input$pvalue_gsea, pAdjustMethod = adj_method)
         }
          return(ora_result)
         }
@@ -384,6 +387,7 @@ table_DEG_data <- reactive({
       kegg_data <- kegg_data()
       data <- kegg_data$res
       updateSelectInput(session, "paths", choices = data$Description)
+      updateSelectInput(session, "paths_reactome", choices = data$Description)
       data.df <- as.data.frame(data)
       DT::datatable(data.df)
     })#fin renderDataTable
@@ -395,41 +399,85 @@ table_DEG_data <- reactive({
      })
 
 
-     output$method_kegg <- renderPlotly({
+     # output$method_kegg <- renderPlotly({
+     #   kegg_data <- kegg_data()
+     #   result_kegg <- kegg_data$res
+     #   if (input$method == 1){
+     #     barplot(result_kegg, showCategory = 10)
+     #   }
+     #   else {
+     #     gseaplot(result_kegg, by = "all", title =input$paths, geneSetID = result_kegg[result_kegg$Description==input$paths,]$ID)
+     #   }
+     # })
+     
+     output$barplot_kegg <- renderPlotly({
        kegg_data <- kegg_data()
        result_kegg <- kegg_data$res
-       if (input$method == 1){
-         barplot(result_kegg, showCategory = 10)
+       barplot(result_kegg, showCategory = 10)
+     })
+     
+     output$gsea_kegg <- renderPlotly({
+       kegg_data <- kegg_data()
+       result_kegg <- kegg_data$res
+       if (input$db == 1){
+         paths <- gsea_path()
        }
-       else {
-         gseaplot(result_kegg, by = "all", title =input$paths, geneSetID = result_kegg[result_kegg$Description==input$paths,]$ID)
+       else{
+         paths <- gsea2_path()  
        }
+       gseaplot(result_kegg, by = "all", title =paths, geneSetID = result_kegg[result_kegg$Description==paths,]$ID)
      })
 
      # output$pathview_kegg <- renderImage({
      #   # Return picture path to load it on popup window
      #   list(src = "www/wait.gif")
      # }, deleteFile = FALSE)
+
+     gsea_path <- eventReactive(input$go,{
+       req(input$paths)
+     })
+     gsea2_path <- eventReactive(input$goreactome,{
+       req(input$paths_reactome)
+     }) 
      
+     pathview_path <- eventReactive(input$go, {
+       req(input$paths)
+     })
+     
+     # output$pathview_kegg <- renderUI({
+     #   kegg_data <- kegg_data()
+     #   result_kegg <- kegg_data$res
+     #   path_pathview <- pathview_path()
+     #   path_id<-result_kegg[result_kegg$Description==path_pathview,]$ID
+     #   # Make and save picture of pathway with pathview
+     #   pathview(gene.data=kegg_data$kegg_gene_list, pathway.id=path_id, species = "mmu")
+     #   path_img<-paste("./",path_id,".pathview.png", sep="")
+     #   # Return picture path to load it on popup window
+     #   tags$img(src = path_img, width = 400)
+     # })        
      output$pathview_kegg <- renderImage({
        kegg_data <- kegg_data()
        result_kegg <- kegg_data$res
-       path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
+       path_pathview <- pathview_path()
+       path_id<-result_kegg[result_kegg$Description==path_pathview,]$ID
        # Make and save picture of pathway with pathview
        pathview(gene.data=kegg_data$kegg_gene_list, pathway.id=path_id, species = "mmu")
        path_img<-paste("./",path_id,".pathview.png", sep="")
        # Return picture path to load it on popup window
-       list(src = path_img)
+       file.remove(paste("./",path_id,".png", sep=""))
+       file.remove(paste("./",path_id,".xml", sep=""))
+       list(src = path_img, height = "500px")
      }, deleteFile = (!input$download_pathview))
      
      output$reactome_plot <- renderPlotly({
        kegg_data <- kegg_data()
        result_kegg <- kegg_data$res
-       path_id<-result_kegg[result_kegg$Description==input$paths,]$ID
-
-       viewPathway(path_id, 
-                   readable = TRUE, 
-                   foldChange = kegg_data$kegg_gene_list)
+       path_reactome <- reactome_path()
+       fc <- kegg_data$kegg_gene_list[which(!duplicated(names(kegg_data$kegg_gene_list)))]
+       # path_id<-result_kegg[result_kegg$Description==path_reactome,]$ID
+       viewPathway(pathName = path_reactome, 
+                   readable = FALSE, 
+                   foldChange = fc)
      })#Mettre bouton pour sélectionner les paths et lancer les 1 ou 2 plots concernés (GSEAplot et pathview/reactome)
      #Problème avec Dowload / suppression image
      #Ne fonctionne pas avec reactome -->
@@ -769,6 +817,6 @@ table_DEG_data <- reactive({
      }) # fin renderDataTable({
      
      
-     
+
     } # end function(input, output) {
 ) # end shinyServer(
