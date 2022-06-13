@@ -807,7 +807,6 @@ table_DEG_data <- reactive({
      
      output$barplot_domain_enrichment_GSEA <- renderPlotly( if(input$method_prt_domain == 2){ 
        result_GSEA <- domain_enrichment_GSEA()
-       #dotplot(result_GSEA)
        dotplot(result_GSEA, showCategory=10, split=".sign") + facet_grid(.~.sign)
        }) # fin renderDataTable({
     
@@ -816,6 +815,46 @@ table_DEG_data <- reactive({
        gseaplot(result_GSEA, input$protein_id_list)
      }) # fin renderDataTable({
      
+     
+
+     ##########################################################################
+     ### Summary
+     ##########################################################################
+     
+     summary_test <-  eventReactive(input$Run_Summary, {
+       #browser()
+       col_select = c('ID','Description', 'BgRatio', 'GeneRatio', 'p.adjust')
+       data_domain <- as.data.frame( domain_enrichment_ORA_enricher() )[col_select]
+       data_domain['BD'] = 'Protein Domains'
+       head(data_domain)
+       data_kegg <- as.data.frame(kegg_data()$res)[col_select]
+       data_kegg['BD'] = 'KEGG'
+       head(data_kegg)
+       data_domain
+       data_summary = rbind(data_domain, data_kegg)
+     })
+     
+     output$Table_summary <- renderDataTable({ 
+       D <- summary_test()
+       DT::datatable(D) 
+     }) # fin renderDataTable({
+     
+     
+     
+     output$bar_plot_summary <- renderPlotly( {
+       summary_test <- summary_test()
+
+       ggplot(data = summary_test, aes(x= p.adjust , y = ID ) ) +
+         geom_bar(stat = "identity", aes(fill = color))  +
+         theme(axis.text.x = element_text(
+           angle = 90,
+           hjust = 1,
+           vjust = 0.5
+         )) +
+         labs(y = "ID", x = "Pvalue adjusted")
+       
+       #browser()
+     })
      
 
     } # end function(input, output) {

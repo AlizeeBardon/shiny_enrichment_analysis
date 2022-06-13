@@ -1,3 +1,5 @@
+![This is an image](www/title.png)
+
 # Shiny Enrichment Analysis
 
 This interactive Shiny application aims to facilitate and automate the analysis of functional enrichment. This project has been carried out as part of the course Bioinformatics in Omics Sciences - NGS sequencing data analysis and annotation - [S3-UE5] with the Master BioInformatics Modeling and Statistics of the University of Rouen [http://masterbioinfo.univ-rouen.fr/].
