@@ -8,6 +8,8 @@
 #
 
 
+library(rlang)
+library(dplyr)
 library(shiny)
 library(shinythemes)
 library(shinydashboard)
@@ -20,7 +22,7 @@ library(shinyBS)
 library(ggridges)
 library(shinycustomloader)
 library(viridis)
-library(tableHTML)
+library(shinycssloaders)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -270,20 +272,244 @@ shinyUI(dashboardPage(
       
       # BODY: tabPanel : GO Term Enrichment --------------------------------
       
-      tabPanel("GO Term Enrichment",
+      tabPanel("GO Term Enrichment", 
                
-               br(), br(),
+               br(),
                
-               box(
-                 title = "Parameters - GO Term Enrichment", 
-                 closable = TRUE, 
-                 status = "success",
-                 width = 12,
-                 solidHeader = TRUE, 
-                 collapsible = TRUE
-               )
+               h1("GO Term Enrichment"), 
                
-      ),
+               br(),
+               
+               box(title = "Analysis method", status = "success", solidHeader = TRUE, width = 4, 
+                   box(
+                     radioGroupButtons("method",
+                                       choices = list(
+                                         "Run over Representation analysis" = "ORA", 
+                                         "Run gene Set Enrichment Analysis" = "GSEA"), 
+                                       direction = "vertical"),
+                     width = 4
+                   ),
+                   
+                   box(
+                     actionButton("Run_Annotation","Run"),
+                     width = 2
+                   )
+               ),
+
+               box(title = "Parameters", status = "success", solidHeader = TRUE, width = 12,  
+                   
+                   box(
+                     selectInput( "Ontology",
+                                  label = h4("choose ontology:"),
+                                  choices = c(
+                                    "BP"="BP",
+                                    "CC"="CC",
+                                    "MF"="MF",
+                                    "All"="All"
+                                  ),
+                                  selected = "BP"),
+                     
+                     width = 4
+                   ),
+                   box(
+                     selectInput( "Ajustement",
+                                  label = h4("choose ajustement method:"),
+                                  choices = c("holm", "hochberg", 
+                                              "hommel", "bonferroni", 
+                                              "BH", "BY", "fdr", 
+                                              "none"), 
+                                  selected = "none"),
+                     width = 4
+                     
+                   ),#fin box
+                   
+                   box(
+                     
+                     sliderInput("pvalue_go",
+                                 label = h3("pvalue cutoff ajusted for enrichment analysis"),
+                                 min = 0,
+                                 max = 0.25,
+                                 value = 0.05),
+                     width = 4
+                     
+                   ),
+                   
+                   box(
+                     radioGroupButtons("type", label = h3("DEG type:"), 
+                                       choices = list(
+                                         "Over expressed DEG only" = 1, 
+                                         "Under expressed DEG only" = 2, 
+                                         "Both" = 3), 
+                                       direction = "vertical"),
+                     width = 3
+                   ),
+               ),
+               
+               
+               conditionalPanel(
+                 
+                 condition = "input.method == 'GSEA'",
+                 
+                 #fluidRow(
+                 #box(collapsible = TRUE, title = "Dot Plot GSEA", status = "success", solidHeader = TRUE, width = 12, height = "600px",
+                 
+                 #plotlyOutput("dotplot",  height = "500px"),
+                 
+                 #),
+                 #),
+                 
+                 box(title = "Dot Plot GSEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "dotplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_dotplot", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "dotplot")
+                              )
+                       )
+                     )
+                 ),
+                 box(title = "ridge Plot GSEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "ridgeplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_ridgeplot", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "ridgeplot")
+                              )
+                       )
+                     )
+                 ),
+                 #fluidRow(
+                 # box(collapsible = TRUE, title = "ridge Plot GSEA", status = "danger", solidHeader = TRUE, width = 12, height = "1000px",
+                 
+                 #plotlyOutput("ridgeplot",  height = "900px")
+                 #),#fin box
+                 
+                 box(title = "gsea Plot", solidHeader = T, status = "success", width = 12, collapsible = T,id = "gsea_plot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_gseaplot", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "gsea_plot")
+                              )
+                       )
+                     )
+                 ),
+               ),
+               
+               conditionalPanel(
+                 condition = "input.method == 'ORA'",
+                 
+                 box(title = "Bar Plot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "barplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_barplot_sea", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "barplot")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 #fluidRow(
+                 #box(collapsible = TRUE, title = "Bar Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                 
+                 #plotlyOutput("barplot",  height = "500px")
+                 #),#fin box
+                 #),
+                 
+                 box(title = "Dot Plot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "dotplot_sea",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_dotplot_sea", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "dotplot_sea")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 #fluidRow(
+                 #box(collapsible = TRUE, title = "Dot Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                 
+                 #plotlyOutput("dotplot_sea",  height = "500px")
+                 #),#fin box
+                 #),
+                 
+                 box(title = "usetplot sea", solidHeader = T, status = "success", width = 12, collapsible = T,id = "usetplot sea",
+                     fluidRow(
+                       # column(3,
+                       #        wellPanel(
+                       #          numericInput("showCategory_usetplot", "number of categories to show", value = 5)
+                       #        )
+                       # )
+                       # ,
+                       column(12,
+                              wellPanel(
+                                plotOutput(outputId = "usetplot")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 box(title = "Goplot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "goplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_goplot_sea", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "goplot")
+                              )
+                       )
+                     )
+                 ),
+                 
+
+                 
+                 # fluidRow(
+                 # box(collapsible = TRUE, title = "goplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
+                 # 
+                 #     plotlyOutput("goplot",  height = "500px")
+                 # ),#fin box
+                 # ),
+                 # ),
+                 
+                 fluidRow(
+                   box (dataTableOutput("go_enrich_table"), width = 12, style = "overflow-x: scroll;") %>% withSpinner(color = "#b68f40"),
+                   
+                 ),
+                 
+               ), # tabPanel("GO Term Enrichm:qent"
+      ),         
+      
       
       # BODY: tabPanel : Pathway Enrichment -------------------------------- 
       
