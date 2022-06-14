@@ -431,6 +431,34 @@ table_DEG_data <- reactive({
     })#fin renderDataTable 
 
     
+    output$go_enrich_table_test <- DT::renderDataTable(DT::datatable({
+      if (input$method_go == 1){
+        data <- as.data.frame(goGse_enrich() )%>%
+        mutate(interpro_link = paste0("<a href='https://amigo.geneontology.org/amigo/term/", Description,"' target='_blank'>", Description,"</a>"))
+        col_a_afficher = c("URL",
+                           "Description",
+                           "GeneRatio",
+                           "BgRatio",
+                           "pvalue",
+                           "p.adjust",
+                           "qvalue")
+        data[col_a_afficher]
+      }
+      else if (input$method_go == 2){
+        data <- as.data.frame(goGse_annot() )%>%
+        mutate(interpro_link = paste0("<a href='https://amigo.geneontology.org/amigo/term/", Description,"' target='_blank'>", Description,"</a>"))
+        col_a_afficher = c("URL",
+                           "Description",
+                           "enrichmentScore",
+                           "pvalue",
+                           "p.adjust",
+                           "rank")
+        data[col_a_afficher]
+      }
+      updateSelectInput(session,"paths")
+      DT::datatable(data)
+      },
+      escape = FALSE))
     ####################################################
     ### ORA pour GO
     #####################################################
