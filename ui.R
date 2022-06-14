@@ -323,10 +323,15 @@ shinyUI(dashboardPage(
                    box(
                      selectInput( "Ajustement_go",
                                   label = h4("choose ajustement method:"),
-                                  choices = c("holm", "hochberg", 
-                                              "hommel", "bonferroni", 
-                                              "BH", "BY", "fdr", 
-                                              "none"), 
+                                  choices = list(
+                                    'Holm (1979) ("holm")' = "holm", 
+                                    'Hochberg (1988) ("hochberg")' = "hochberg", 
+                                    'Hommel (1988) ("hommel")' = "hommel", 
+                                    'Bonferroni correction ("bonferroni")' = "bonferroni", 
+                                    'Benjamini & Hochberg (1995) ("BH" or its alias "fdr")' = "BH", 
+                                    'Benjamini & Yekutieli (2001) ("BY")' = "BY",
+                                    'none' = "none"
+                                  ),
                                   selected = "none"),
                      width = 4
                      
@@ -385,7 +390,8 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "dotplot_gsea_go")
+                                shinycustomloader::withLoader(plotlyOutput("dotplot_gsea_go", height = "450px"), type = "image", loader = "wait.gif")
+                                #plotOutput(outputId = "dotplot_gsea_go")
                               )
                        )
                      )
@@ -403,7 +409,8 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "ridgeplot_go")
+                                shinycustomloader::withLoader(plotlyOutput("ridgeplot_go", height = "450px"), type = "image", loader = "wait.gif")
+                                #plotOutput(outputId = "ridgeplot_go")
                               )
                        )
                      )
@@ -422,7 +429,8 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "gsea_plot_go")
+                                shinycustomloader::withLoader(plotlyOutput("gsea_plot_go", height = "450px"), type = "image", loader = "wait.gif")
+                                #plotOutput(outputId = "gsea_plot_go")
                               )
                        )
                      )
@@ -443,7 +451,8 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "barplot_ora_go")
+                                shinycustomloader::withLoader(plotlyOutput("barplot_ora_go", height = "450px"), type = "image", loader = "wait.gif")
+                                #plotOutput(outputId = "barplot_ora_go")
                               )
                        )
                      )
@@ -460,7 +469,8 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "dotplot_sea_go")
+                                shinycustomloader::withLoader(plotlyOutput("dotplot_sea_go", height = "450px"), type = "image", loader = "wait.gif")
+                                #plotOutput(outputId = "dotplot_sea_go")
                               )
                        )
                      )
@@ -476,7 +486,8 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "goplot_sea")
+                                shinycustomloader::withLoader(plotlyOutput("goplot_sea", height = "450px"), type = "image", loader = "wait.gif")
+                                #plotOutput(outputId = "goplot_sea")
                               )
                        )
                      )
