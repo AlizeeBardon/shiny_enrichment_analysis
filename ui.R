@@ -280,23 +280,32 @@ shinyUI(dashboardPage(
                
                br(),
                
-               box(title = "Analysis method", status = "success", solidHeader = TRUE, width = 4, 
+               
+               box(title = "Parameters", status = "success", solidHeader = TRUE, width = 12,
+                   
+                   
                    box(
-                     radioGroupButtons("method",
-                                       choices = list(
-                                         "Run over Representation analysis" = "ORA", 
-                                         "Run gene Set Enrichment Analysis" = "GSEA"), 
-                                       direction = "vertical"),
+                     radioButtons("method_go", 
+                                  label = h4(
+                                    "Analysis method",
+                                    tipify(actionBttn(
+                                      inputId = "gooooooooo",
+                                      icon = icon("question"),
+                                      style = "jelly",
+                                      size = "xs",
+                                      block = FALSE,
+                                      no_outline = TRUE
+                                    ), "ORA : hypergeom test with BH adjustment", placement="bottom", trigger = "hover") 
+                                  ),
+                                  choices = list(
+                                    "Over epresentation analysis (ORA)" = 1, 
+                                    "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                  selected = 1),
+                     
                      width = 4
                    ),
                    
-                   box(
-                     actionButton("Run_Annotation","Run"),
-                     width = 2
-                   )
-               ),
-
-               box(title = "Parameters", status = "success", solidHeader = TRUE, width = 12,  
+                   
                    
                    box(
                      selectInput( "Ontology",
@@ -312,7 +321,7 @@ shinyUI(dashboardPage(
                      width = 4
                    ),
                    box(
-                     selectInput( "Ajustement",
+                     selectInput( "Ajustement_go",
                                   label = h4("choose ajustement method:"),
                                   choices = c("holm", "hochberg", 
                                               "hommel", "bonferroni", 
@@ -335,28 +344,36 @@ shinyUI(dashboardPage(
                    ),
                    
                    box(
-                     radioGroupButtons("type", label = h3("DEG type:"), 
+                     radioGroupButtons("type_go", label = h3("DEG type:"), 
                                        choices = list(
-                                         "Over expressed DEG only" = 1, 
-                                         "Under expressed DEG only" = 2, 
-                                         "Both" = 3), 
+                                         "Over expressed DEG only" = "over", 
+                                         "Under expressed DEG only" = "under", 
+                                         "Both" = "both"), 
                                        direction = "vertical"),
                      width = 3
                    ),
+                   
+                   
+                   box(
+                     actionButton(
+                       "Run_Annotation_go",
+                       icon = icon("seedling"),
+                       strong("Run Go Term Enrichment")),
+                     width = 12
+                   )
                ),
+               
+               
+               box (
+                 shinycustomloader::withLoader(dataTableOutput("go_enrich_table"), type = "image", loader = "wait.gif"),
+                 width = 12) ,
+                 
+               
                
                
                conditionalPanel(
                  
-                 condition = "input.method == 'GSEA'",
-                 
-                 #fluidRow(
-                 #box(collapsible = TRUE, title = "Dot Plot GSEA", status = "success", solidHeader = TRUE, width = 12, height = "600px",
-                 
-                 #plotlyOutput("dotplot",  height = "500px"),
-                 
-                 #),
-                 #),
+                 condition = "input.method_go == 2",
                  
                  box(title = "Dot Plot GSEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "dotplot",
                      fluidRow(
@@ -368,11 +385,14 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "dotplot")
+                                plotOutput(outputId = "dotplot_gsea_go")
                               )
                        )
                      )
                  ),
+                 
+                 ################"
+                 
                  box(title = "ridge Plot GSEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "ridgeplot",
                      fluidRow(
                        column(3,
@@ -383,16 +403,14 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "ridgeplot")
+                                plotOutput(outputId = "ridgeplot_go")
                               )
                        )
                      )
                  ),
-                 #fluidRow(
-                 # box(collapsible = TRUE, title = "ridge Plot GSEA", status = "danger", solidHeader = TRUE, width = 12, height = "1000px",
                  
-                 #plotlyOutput("ridgeplot",  height = "900px")
-                 #),#fin box
+                 
+                 ###################
                  
                  box(title = "gsea Plot", solidHeader = T, status = "success", width = 12, collapsible = T,id = "gsea_plot",
                      fluidRow(
@@ -404,15 +422,16 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "gsea_plot")
+                                plotOutput(outputId = "gsea_plot_go")
                               )
                        )
                      )
                  ),
+                 
                ),
                
                conditionalPanel(
-                 condition = "input.method == 'ORA'",
+                 condition = "input.method_go == 1",
                  
                  box(title = "Bar Plot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "barplot",
                      fluidRow(
@@ -424,18 +443,12 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "barplot")
+                                plotOutput(outputId = "barplot_ora_go")
                               )
                        )
                      )
                  ),
                  
-                 #fluidRow(
-                 #box(collapsible = TRUE, title = "Bar Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                 
-                 #plotlyOutput("barplot",  height = "500px")
-                 #),#fin box
-                 #),
                  
                  box(title = "Dot Plot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "dotplot_sea",
                      fluidRow(
@@ -447,30 +460,7 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "dotplot_sea")
-                              )
-                       )
-                     )
-                 ),
-                 
-                 #fluidRow(
-                 #box(collapsible = TRUE, title = "Dot Plot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                 
-                 #plotlyOutput("dotplot_sea",  height = "500px")
-                 #),#fin box
-                 #),
-                 
-                 box(title = "usetplot sea", solidHeader = T, status = "success", width = 12, collapsible = T,id = "usetplot sea",
-                     fluidRow(
-                       # column(3,
-                       #        wellPanel(
-                       #          numericInput("showCategory_usetplot", "number of categories to show", value = 5)
-                       #        )
-                       # )
-                       # ,
-                       column(12,
-                              wellPanel(
-                                plotOutput(outputId = "usetplot")
+                                plotOutput(outputId = "dotplot_sea_go")
                               )
                        )
                      )
@@ -486,29 +476,15 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                plotOutput(outputId = "goplot")
+                                plotOutput(outputId = "goplot_sea")
                               )
                        )
                      )
                  ),
                  
-
                  
-                 # fluidRow(
-                 # box(collapsible = TRUE, title = "goplot SEA", status = "warning", solidHeader = TRUE, width = 12, height = "600px",
-                 # 
-                 #     plotlyOutput("goplot",  height = "500px")
-                 # ),#fin box
-                 # ),
-                 # ),
-                 
-                 fluidRow(
-                   box (dataTableOutput("go_enrich_table"), width = 12, style = "overflow-x: scroll;") %>% withSpinner(color = "#b68f40"),
-                   
-                 ),
-                 
-               ), # tabPanel("GO Term Enrichm:qent"
-      ),         
+               ), 
+      ),  # tabPanel("GO Term Enrichm:qent"       
       
       
       # BODY: tabPanel : Pathway Enrichment -------------------------------- 

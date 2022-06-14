@@ -284,7 +284,8 @@ table_DEG_data <- reactive({
     ### GSEA pour GO
     #####################################################
     
-    goGse_annot<- eventReactive(input$Run_Annotation,{
+    goGse_annot <-  eventReactive(input$Run_Annotation_go, if(input$method_go == 2){
+    #goGse_annot<- eventReactive(input$Run_Annotation_go,{
       espece_id <- espece_id()
       orga_translate_table <- orga_translate_table()
       # reading in data
@@ -298,7 +299,7 @@ table_DEG_data <- reactive({
       # sort the list in decreasing order (required for clusterProfiler)
       gene_list <- sort(gene_list, decreasing=TRUE)
       #gsea_go_data <- go_data()
-      browser()
+
       gse <- gseGO(geneList=gene_list, 
                    ont = input$Ontology, 
                    keyType = 'ENSEMBL', 
@@ -312,19 +313,19 @@ table_DEG_data <- reactive({
     })
     
     
-    output$dotplot <-renderPlot({
+    output$dotplot_gsea_go <-renderPlot({
       gse<-goGse_annot()
       require(DOSE)
       dotplot(gse, showCategory = input$showCategory_dotplot, title = "gsea dotplot" , split=".sign") + facet_grid(.~.sign)
     })
     
-    output$ridgeplot<-renderPlot({
+    output$ridgeplot_go<-renderPlot({
       gse<-goGse_annot()
       require(DOSE)
       ridgeplot(gse, showCategory =input$showCategory_ridgeplot)
     })
     
-    output$gsea_plot <-renderPlot({
+    output$gsea_plot_go <-renderPlot({
       gse<-goGse_annot()
       require(DOSE)
       gseaplot2(gse, geneSetID = input$showCategory_gseaplot)
@@ -334,7 +335,8 @@ table_DEG_data <- reactive({
     ### ORA pour GO
     #####################################################
     
-    goGse_enrich<- eventReactive(input$Run_Annotation,{
+    goGse_enrich <-  eventReactive(input$Run_Annotation_go, if(input$method_go == 1){
+    #goGse_enrich<- eventReactive(input$Run_Annotation_go,{
       espece_id <- espece_id()
       orga_translate_table <- orga_translate_table()
       # reading in data
@@ -367,15 +369,16 @@ table_DEG_data <- reactive({
       
       # filter on min log2fold change
       
-      if (input$type == 1){
-        genes <- names(genes)[genes > 0]
+      tresholdLog2FoldChange <- tresholdLog2FoldChange()
+
+      if (input$type_go == "over"){
+        genes <- names(genes)[genes > tresholdLog2FoldChange]
       }
-      else if(input$type == 2) {
-        genes <- names(genes)[genes < 0]
-        #browser()
+      else if(input$type_go == "under") {
+        genes <- names(genes)[genes < -tresholdLog2FoldChange]
       }
-      else {
-        genes <- names(genes)
+      else if(input$type_go == "both") {
+        genes <- names(genes)[abs(genes) > tresholdLog2FoldChange]
       }
       go_enrich <- enrichGO(gene = genes,
                             universe = names(gene_list),
@@ -383,11 +386,12 @@ table_DEG_data <- reactive({
                             keyType = 'ENSEMBL',
                             readable = T,
                             ont = input$Ontology,
-                            #pvalueCutoff = input$pvalue_go, 
-                            qvalueCutoff = 0.10)
+                            pvalueCutoff = input$pvalue_go, 
+                            #qvalueCutoff = 0.10
+                            )
     })
     
-    output$barplot <-renderPlot({
+    output$barplot_ora_go <-renderPlot({
       gse<-goGse_enrich()
       barplot(gse, 
               drop = TRUE, 
@@ -396,17 +400,13 @@ table_DEG_data <- reactive({
               font.size = 8)
     })
     
-    output$dotplot_sea <-renderPlot({
+    output$dotplot_sea_go <-renderPlot({
       gse<-goGse_enrich()
       dotplot(gse, showCategory = input$showCategory_dotplot_sea)+ ggtitle("Dotpot for SEA")
     })
     
-    output$usetplot <-renderPlot({
-      gse<-goGse_enrich()
-      upsetplot(gse)
-    })
     
-    output$goplot <-renderPlot({
+    output$goplot_sea <-renderPlot({
       gse<-goGse_enrich()
       goplot(gse, 
              #drop = TRUE, 
@@ -419,10 +419,10 @@ table_DEG_data <- reactive({
     
     output$go_enrich_table <- renderDataTable({
       
-      if (input$method == "ORA"){
+      if (input$method_go == 1){
         data <- goGse_enrich()
       }
-      else if (input$method == "GSEA"){
+      else if (input$method_go == 2){
         data <- goGse_annot() 
       }
       updateSelectInput(session,"paths", choices = data$Description)
@@ -466,6 +466,8 @@ table_DEG_data <- reactive({
       # sort the list in decreasing order (required for clusterProfiler)
       kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
       #Method to use for gene set analysis
+      
+      
       if(input$method == 2){
         res <- gse_kegg(kegg_gene_list, adj_method, orga_translate_table[espece_id,])
       }
@@ -515,6 +517,8 @@ table_DEG_data <- reactive({
         # omit NA values
         kegg_genes <- na.omit(kegg_genes)
         # filter on log2fold change (under or over expressed DEG)
+        
+        
         if (input$type == 1){
           kegg_genes <- names(kegg_genes)[kegg_genes > 0]
         }
