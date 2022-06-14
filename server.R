@@ -298,7 +298,6 @@ table_DEG_data <- reactive({
       # sort the list in decreasing order (required for clusterProfiler)
       gene_list <- sort(gene_list, decreasing=TRUE)
       #gsea_go_data <- go_data()
-      browser()
       gse <- gseGO(geneList=gene_list, 
                    ont = input$Ontology, 
                    keyType = 'ENSEMBL', 
