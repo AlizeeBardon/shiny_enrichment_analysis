@@ -31,6 +31,12 @@ library(shinyalert)
 library(ReactomePA)
 library(ggrepel)
 library(wordcloud)
+library(enrichplot)
+library(shinycssloaders)
+library(ggridges)
+library(plotly)
+library(highcharter)
+library(DT)
 
 # Define server 
 shinyServer(function(input, output, session) {
