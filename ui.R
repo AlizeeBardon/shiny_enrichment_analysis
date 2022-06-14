@@ -314,7 +314,7 @@ shinyUI(dashboardPage(
                                     "BP"="BP",
                                     "CC"="CC",
                                     "MF"="MF",
-                                    "All"="All"
+                                    "All"="ALL"
                                   ),
                                   selected = "BP"),
                      
@@ -891,8 +891,8 @@ shinyUI(dashboardPage(
                
                box (
                  title = strong("Summary of the ORA result for KEGG and Protein Domains - BarPlot"), 
-                 shinycustomloader::withLoader(plotlyOutput("bar_plot_summary", height = "8000px"), type = "image", loader = "wait.gif"),
-                 width = 6)
+                 shinycustomloader::withLoader(plotlyOutput("bar_plot_summary", height='800px'), type = "image", loader = "wait.gif"),
+                 width = 12)
                
                )
       

@@ -64,9 +64,9 @@ re <- reactive({
       validate(need(ext == "csv", "Invalid file. Please upload a .csv file"))
       data <- read.csv(file$datapath, header = TRUE, sep = ";") 
       data <- na.omit(data)
-      required_columns <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
+      required_columns <- c("ID", "baseMean", "log2FC", "pval", "padj")
       column_names <- colnames(data)
-      min_columns <- 6
+      min_columns <- 5
       shiny::validate(
         need(ncol(data) >= min_columns, "Your data has not enought columns. Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj"),
         need(all(required_columns %in% column_names), "You don't have the right data.  Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj")
@@ -712,7 +712,6 @@ table_DEG_data <- reactive({
        comptage_Domains <- comptage_Domains()
        #background
        GeneRef = unique(na.omit(interpro_id[c('interpro','ensembl_gene_id')]))
-       summary(GeneRef)
        
        #liste d'interet
        GeneList <- DEG()
@@ -977,16 +976,17 @@ table_DEG_data <- reactive({
      ##########################################################################
      
      summary_test <-  eventReactive(input$Run_Summary, {
-       #browser()
        col_select = c('ID','Description', 'BgRatio', 'GeneRatio', 'p.adjust')
        data_domain <- as.data.frame( domain_enrichment_ORA_enricher() )[col_select]
-       data_domain['BD'] = 'Protein Domains'
-       head(data_domain)
+       data_domain['Terms'] = 'Protein Domains'
+
        data_kegg <- as.data.frame(kegg_data()$res)[col_select]
-       data_kegg['BD'] = 'KEGG'
-       head(data_kegg)
-       data_domain
-       data_summary = rbind(data_domain, data_kegg)
+       data_kegg['Terms'] = 'KEGG'
+       
+       data_go <- as.data.frame(goGse_enrich())[col_select]
+       data_go['Terms'] = 'GO'
+
+       data_summary = rbind(data_domain, data_kegg, data_go)
      })
      
      output$Table_summary <- renderDataTable({ 
@@ -1000,7 +1000,7 @@ table_DEG_data <- reactive({
        summary_test <- summary_test()
 
        ggplot(data = summary_test, aes(x= p.adjust , y = ID ) ) +
-         geom_bar(stat = "identity", aes(fill = color))  +
+         geom_bar(stat = "identity", aes(fill = Terms))  +
          theme(axis.text.x = element_text(
            angle = 90,
            hjust = 1,
