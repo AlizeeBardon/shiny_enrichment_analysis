@@ -278,6 +278,151 @@ table_DEG_data <- reactive({
     ### GSEA pour GO
     #####################################################
     
+    goGse_annot<- eventReactive(input$Run_Annotation,{
+      espece_id <- espece_id()
+      orga_translate_table <- orga_translate_table()
+      # reading in data
+      go <- re()
+      # we want the log2 fold change
+      original_gene_list <- go$log2FC
+      # name the vector
+      names(original_gene_list) <- go$ID
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list <- sort(gene_list, decreasing=TRUE)
+      #gsea_go_data <- go_data()
+      browser()
+      gse <- gseGO(geneList=gene_list, 
+                   ont = input$Ontology, 
+                   keyType = 'ENSEMBL', 
+                   pvalueCutoff = input$pvalue_go, 
+                   minGSSize = 3, 
+                   maxGSSize = 800, 
+                   verbose = TRUE, 
+                   OrgDb = orga_translate_table[espece_id,2], 
+                   pAdjustMethod = "none")
+    
+    })
+    
+    
+    output$dotplot <-renderPlot({
+      gse<-goGse_annot()
+      require(DOSE)
+      dotplot(gse, showCategory = input$showCategory_dotplot, title = "gsea dotplot" , split=".sign") + facet_grid(.~.sign)
+    })
+    
+    output$ridgeplot<-renderPlot({
+      gse<-goGse_annot()
+      require(DOSE)
+      ridgeplot(gse, showCategory =input$showCategory_ridgeplot)
+    })
+    
+    output$gsea_plot <-renderPlot({
+      gse<-goGse_annot()
+      require(DOSE)
+      gseaplot2(gse, geneSetID = input$showCategory_gseaplot)
+    })
+    
+    ####################################################
+    ### ORA pour GO
+    #####################################################
+    
+    goGse_enrich<- eventReactive(input$Run_Annotation,{
+      espece_id <- espece_id()
+      orga_translate_table <- orga_translate_table()
+      # reading in data
+      go <- re()
+      
+      # we want the log2 fold change 
+      original_gene_list <- go$log2FC
+      
+      # name the vector
+      names(original_gene_list) <- go$ID
+      
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
+      
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list = sort(gene_list, decreasing = TRUE)
+      
+      # Exctract significant results (padj < 0.05)
+      sig_genes_df = subset(go, padj < input$pvalue_go)
+      
+      # From significant results, we want to filter on log2fold change
+      genes <- sig_genes_df$log2FC
+      
+      # Name the vector
+      names(genes) <- sig_genes_df$ID
+      
+      # omit NA values
+      genes <- na.omit(genes)
+      #genes <- names(genes)
+      
+      # filter on min log2fold change
+      
+      if (input$type == 1){
+        genes <- names(genes)[genes > 0]
+      }
+      else if(input$type == 2) {
+        genes <- names(genes)[genes < 0]
+        #browser()
+      }
+      else {
+        genes <- names(genes)
+      }
+      go_enrich <- enrichGO(gene = genes,
+                            universe = names(gene_list),
+                            OrgDb = orga_translate_table[espece_id,2], 
+                            keyType = 'ENSEMBL',
+                            readable = T,
+                            ont = input$Ontology,
+                            #pvalueCutoff = input$pvalue_go, 
+                            qvalueCutoff = 0.10)
+    })
+    
+    output$barplot <-renderPlot({
+      gse<-goGse_enrich()
+      barplot(gse, 
+              drop = TRUE, 
+              showCategory = input$showCategory_barplot_sea, 
+              title = "Barplot for SEA",
+              font.size = 8)
+    })
+    
+    output$dotplot_sea <-renderPlot({
+      gse<-goGse_enrich()
+      dotplot(gse, showCategory = input$showCategory_dotplot_sea)+ ggtitle("Dotpot for SEA")
+    })
+    
+    output$usetplot <-renderPlot({
+      gse<-goGse_enrich()
+      upsetplot(gse)
+    })
+    
+    output$goplot <-renderPlot({
+      gse<-goGse_enrich()
+      goplot(gse, 
+             #drop = TRUE, 
+             showCategory = input$showCategory_goplot_sea, #nombre de pathway Ã  afficher
+             font.size = 8,
+             split=".sign")
+    })
+    
+    ############################# TABLE OUTPUT ###############################
+    
+    output$go_enrich_table <- renderDataTable({
+      
+      if (input$method == "ORA"){
+        data <- goGse_enrich()
+      }
+      else if (input$method == "GSEA"){
+        data <- goGse_annot() 
+      }
+      updateSelectInput(session,"paths", choices = data$Description)
+      data.df <- as.data.frame(data)
+      DT::datatable(data.df)
+    })#fin renderDataTable 
 
     
     ####################################################
