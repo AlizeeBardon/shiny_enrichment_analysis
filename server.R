@@ -180,7 +180,6 @@ table_DEG_data <- reactive({
         # updating the name of the saved plot 
         config(plotly_object,
                toImageButtonOptions= list(filename = paste0("VolcanoPlot_pvalue_", pvalue, "_log2FC_", tresholdlog2foldchange)))
-
       })
 
 ### MA plot    
@@ -274,18 +273,17 @@ table_DEG_data <- reactive({
         selectRows(row_clicked)
     }) # fin observe
     
-    
     # -------------------------------------------------------------------
     # BODY: tabPanel :GO Term Enrichment --------------------------------
     # -------------------------------------------------------------------
-         
+    
     
     ####################################################
     ### GSEA pour GO
     #####################################################
     
     goGse_annot <-  eventReactive(input$Run_Annotation_go, if(input$method_go == 2){
-    #goGse_annot<- eventReactive(input$Run_Annotation_go,{
+      #goGse_annot<- eventReactive(input$Run_Annotation_go,{
       espece_id <- espece_id()
       orga_translate_table <- orga_translate_table()
       # reading in data
@@ -299,7 +297,7 @@ table_DEG_data <- reactive({
       # sort the list in decreasing order (required for clusterProfiler)
       gene_list <- sort(gene_list, decreasing=TRUE)
       #gsea_go_data <- go_data()
-
+      
       gse <- gseGO(geneList=gene_list, 
                    ont = input$Ontology, 
                    keyType = 'ENSEMBL', 
@@ -309,8 +307,17 @@ table_DEG_data <- reactive({
                    verbose = TRUE, 
                    OrgDb = orga_translate_table[espece_id,2], 
                    pAdjustMethod = "none")
-    
+      
     })
+    
+    output$Table_go_GSEA <- DT::renderDataTable(DT::datatable({
+      data <- as.data.frame( goGse_annot() )%>%
+        mutate(GO_term = paste0("<a href='https://www.ebi.ac.uk/QuickGO/term/", ID,"' target='_blank'>", ID,"</a>"))
+      col_a_afficher = c('GO_term','setSize', 'enrichmentScore', 'NES', 'pvalue', 'p.adjust', 'rank')
+      #updateSelectInput(session,"paths", choices = data$Description)
+      data[col_a_afficher]
+    },
+    escape = FALSE))
     
     
     output$dotplot_gsea_go <-renderPlot({
@@ -336,7 +343,7 @@ table_DEG_data <- reactive({
     #####################################################
     
     goGse_enrich <-  eventReactive(input$Run_Annotation_go, if(input$method_go == 1){
-    #goGse_enrich<- eventReactive(input$Run_Annotation_go,{
+      #goGse_enrich<- eventReactive(input$Run_Annotation_go,{
       espece_id <- espece_id()
       orga_translate_table <- orga_translate_table()
       # reading in data
@@ -370,7 +377,7 @@ table_DEG_data <- reactive({
       # filter on min log2fold change
       
       tresholdLog2FoldChange <- tresholdLog2FoldChange()
-
+      
       if (input$type_go == "over"){
         genes <- names(genes)[genes > tresholdLog2FoldChange]
       }
@@ -388,8 +395,17 @@ table_DEG_data <- reactive({
                             ont = input$Ontology,
                             pvalueCutoff = input$pvalue_go, 
                             #qvalueCutoff = 0.10
-                            )
+      )
     })
+    
+    output$Table_go_ORA <- DT::renderDataTable(DT::datatable({
+      data <- as.data.frame( goGse_enrich() )%>%
+        mutate(GO_term = paste0("<a href='https://www.ebi.ac.uk/QuickGO/term/", ID,"' target='_blank'>", ID,"</a>"))
+      col_a_afficher = c('GO_term','GeneRatio', 'BgRatio', 'p.adjust', 'Count')
+      updateSelectInput(session,"paths", choices = data$Description)
+      data[col_a_afficher]
+    },
+    escape = FALSE))
     
     output$barplot_ora_go <-renderPlot({
       gse<-goGse_enrich()
@@ -414,55 +430,6 @@ table_DEG_data <- reactive({
              font.size = 8,
              split=".sign")
     })
-    
-    ############################# TABLE OUTPUT ###############################
-    
-    output$go_enrich_table <- renderDataTable({
-      
-      if (input$method_go == 1){
-        data <- goGse_enrich()
-      }
-      else if (input$method_go == 2){
-        data <- goGse_annot() 
-      }
-      updateSelectInput(session,"paths", choices = data$Description)
-      data.df <- as.data.frame(data)
-      DT::datatable(data.df)
-    })#fin renderDataTable 
-
-    
-    output$go_enrich_table_test <- DT::renderDataTable(DT::datatable({
-      if (input$method_go == 1){
-        data <- as.data.frame(goGse_enrich() )%>%
-        mutate(interpro_link = paste0("<a href='https://amigo.geneontology.org/amigo/term/", Description,"' target='_blank'>", Description,"</a>"))
-        col_a_afficher = c("URL",
-                           "Description",
-                           "GeneRatio",
-                           "BgRatio",
-                           "pvalue",
-                           "p.adjust",
-                           "qvalue")
-        data[col_a_afficher]
-      }
-      else if (input$method_go == 2){
-        data <- as.data.frame(goGse_annot() )%>%
-        mutate(interpro_link = paste0("<a href='https://amigo.geneontology.org/amigo/term/", Description,"' target='_blank'>", Description,"</a>"))
-        col_a_afficher = c("URL",
-                           "Description",
-                           "enrichmentScore",
-                           "pvalue",
-                           "p.adjust",
-                           "rank")
-        data[col_a_afficher]
-      }
-      updateSelectInput(session,"paths")
-      DT::datatable(data)
-      },
-      escape = FALSE))
-    ####################################################
-    ### ORA pour GO
-    #####################################################
-
     
     # -------------------------------------------------------------------
     # BODY: tabPanel :KEGG --------------------------------
@@ -782,7 +749,6 @@ table_DEG_data <- reactive({
                      n = n))
        }
        
-       
        #  II -  hypergeometric test                        
        
        hypergeom_test = function(x, k, m, n){
@@ -1007,13 +973,10 @@ table_DEG_data <- reactive({
        col_select = c('ID','Description', 'BgRatio', 'GeneRatio', 'p.adjust')
        data_domain <- as.data.frame( domain_enrichment_ORA_enricher() )[col_select]
        data_domain['Terms'] = 'Protein Domains'
-
        data_kegg <- as.data.frame(kegg_data()$res)[col_select]
        data_kegg['Terms'] = 'KEGG'
-       
        data_go <- as.data.frame(goGse_enrich())[col_select]
        data_go['Terms'] = 'GO'
-
        data_summary = rbind(data_domain, data_kegg, data_go)
      })
      
@@ -1022,11 +985,8 @@ table_DEG_data <- reactive({
        DT::datatable(D) 
      }) # fin renderDataTable({
      
-     
-     
      output$bar_plot_summary <- renderPlotly( {
        summary_test <- summary_test()
-
        ggplot(data = summary_test, aes(x= p.adjust , y = ID ) ) +
          geom_bar(stat = "identity", aes(fill = Terms))  +
          theme(axis.text.x = element_text(
@@ -1035,8 +995,6 @@ table_DEG_data <- reactive({
            vjust = 0.5
          )) +
          labs(y = "ID", x = "Pvalue adjusted")
-       
-       #browser()
      })
      
 

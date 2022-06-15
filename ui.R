@@ -323,15 +323,10 @@ shinyUI(dashboardPage(
                    box(
                      selectInput( "Ajustement_go",
                                   label = h4("choose ajustement method:"),
-                                  choices = list(
-                                    'Holm (1979) ("holm")' = "holm", 
-                                    'Hochberg (1988) ("hochberg")' = "hochberg", 
-                                    'Hommel (1988) ("hommel")' = "hommel", 
-                                    'Bonferroni correction ("bonferroni")' = "bonferroni", 
-                                    'Benjamini & Hochberg (1995) ("BH" or its alias "fdr")' = "BH", 
-                                    'Benjamini & Yekutieli (2001) ("BY")' = "BY",
-                                    'none' = "none"
-                                  ),
+                                  choices = c("holm", "hochberg", 
+                                              "hommel", "bonferroni", 
+                                              "BH", "BY", "fdr", 
+                                              "none"), 
                                   selected = "none"),
                      width = 4
                      
@@ -368,17 +363,15 @@ shinyUI(dashboardPage(
                    )
                ),
                
-               
-               box (
-                 shinycustomloader::withLoader(dataTableOutput("go_enrich_table"), type = "image", loader = "wait.gif"),
-                 width = 12) ,
-                 
-               
-               
-               
                conditionalPanel(
                  
                  condition = "input.method_go == 2",
+                 
+                 box (
+                   title = "GSEA",
+                   shinycustomloader::withLoader(dataTableOutput("Table_go_GSEA"), type = "image", loader = "wait.gif"),
+                   width = 12) ,
+                 
                  
                  box(title = "Dot Plot GSEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "dotplot",
                      fluidRow(
@@ -390,8 +383,7 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                shinycustomloader::withLoader(plotlyOutput("dotplot_gsea_go", height = "450px"), type = "image", loader = "wait.gif")
-                                #plotOutput(outputId = "dotplot_gsea_go")
+                                plotOutput(outputId = "dotplot_gsea_go")
                               )
                        )
                      )
@@ -409,8 +401,7 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                shinycustomloader::withLoader(plotlyOutput("ridgeplot_go", height = "450px"), type = "image", loader = "wait.gif")
-                                #plotOutput(outputId = "ridgeplot_go")
+                                plotOutput(outputId = "ridgeplot_go")
                               )
                        )
                      )
@@ -429,8 +420,7 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                shinycustomloader::withLoader(plotlyOutput("gsea_plot_go", height = "450px"), type = "image", loader = "wait.gif")
-                                #plotOutput(outputId = "gsea_plot_go")
+                                plotOutput(outputId = "gsea_plot_go")
                               )
                        )
                      )
@@ -440,6 +430,11 @@ shinyUI(dashboardPage(
                
                conditionalPanel(
                  condition = "input.method_go == 1",
+                 
+                 box (
+                   title = "ORA",
+                   shinycustomloader::withLoader(dataTableOutput("Table_go_ORA"), type = "image", loader = "wait.gif"),
+                   width = 12) ,
                  
                  box(title = "Bar Plot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "barplot",
                      fluidRow(
@@ -451,8 +446,7 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                shinycustomloader::withLoader(plotlyOutput("barplot_ora_go", height = "450px"), type = "image", loader = "wait.gif")
-                                #plotOutput(outputId = "barplot_ora_go")
+                                plotOutput(outputId = "barplot_ora_go")
                               )
                        )
                      )
@@ -469,8 +463,7 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                shinycustomloader::withLoader(plotlyOutput("dotplot_sea_go", height = "450px"), type = "image", loader = "wait.gif")
-                                #plotOutput(outputId = "dotplot_sea_go")
+                                plotOutput(outputId = "dotplot_sea_go")
                               )
                        )
                      )
@@ -486,8 +479,7 @@ shinyUI(dashboardPage(
                        ,
                        column(9,
                               wellPanel(
-                                shinycustomloader::withLoader(plotlyOutput("goplot_sea", height = "450px"), type = "image", loader = "wait.gif")
-                                #plotOutput(outputId = "goplot_sea")
+                                plotOutput(outputId = "goplot_sea")
                               )
                        )
                      )
@@ -495,7 +487,7 @@ shinyUI(dashboardPage(
                  
                  
                ), 
-      ),  # tabPanel("GO Term Enrichm:qent"       
+      ),  # tabPanel("GO Term Enrichment"     
       
       
       # BODY: tabPanel : Pathway Enrichment -------------------------------- 
