@@ -8,6 +8,8 @@
 #
 
 
+library(rlang)
+library(dplyr)
 library(shiny)
 library(shinythemes)
 library(shinydashboard)
@@ -20,7 +22,7 @@ library(shinyBS)
 library(ggridges)
 library(shinycustomloader)
 library(viridis)
-library(tableHTML)
+library(shinycssloaders)
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -270,20 +272,223 @@ shinyUI(dashboardPage(
       
       # BODY: tabPanel : GO Term Enrichment --------------------------------
       
-      tabPanel("GO Term Enrichment",
+      tabPanel("GO Term Enrichment", 
                
-               br(), br(),
+               br(),
                
-               box(
-                 title = "Parameters - GO Term Enrichment", 
-                 closable = TRUE, 
-                 status = "success",
-                 width = 12,
-                 solidHeader = TRUE, 
-                 collapsible = TRUE
-               )
+               h1("GO Term Enrichment"), 
                
-      ),
+               br(),
+               
+               
+               box(title = "Parameters", status = "success", solidHeader = TRUE, width = 12,
+                   
+                   
+                   box(
+                     radioButtons("method_go", 
+                                  label = h4(
+                                    "Analysis method",
+                                    tipify(actionBttn(
+                                      inputId = "gooooooooo",
+                                      icon = icon("question"),
+                                      style = "jelly",
+                                      size = "xs",
+                                      block = FALSE,
+                                      no_outline = TRUE
+                                    ), "ORA : hypergeom test with BH adjustment", placement="bottom", trigger = "hover") 
+                                  ),
+                                  choices = list(
+                                    "Over epresentation analysis (ORA)" = 1, 
+                                    "Gene Set Enrichment Analysis (GSEA)" = 2), 
+                                  selected = 1),
+                     
+                     width = 4
+                   ),
+                   
+                   
+                   
+                   box(
+                     selectInput( "Ontology",
+                                  label = h4("choose ontology:"),
+                                  choices = c(
+                                    "BP"="BP",
+                                    "CC"="CC",
+                                    "MF"="MF",
+                                    "All"="ALL"
+                                  ),
+                                  selected = "BP"),
+                     
+                     width = 4
+                   ),
+                   box(
+                     selectInput( "Ajustement_go",
+                                  label = h4("choose ajustement method:"),
+                                  choices = c("holm", "hochberg", 
+                                              "hommel", "bonferroni", 
+                                              "BH", "BY", "fdr", 
+                                              "none"), 
+                                  selected = "none"),
+                     width = 4
+                     
+                   ),#fin box
+                   
+                   box(
+                     
+                     sliderInput("pvalue_go",
+                                 label = h3("pvalue cutoff ajusted for enrichment analysis"),
+                                 min = 0,
+                                 max = 0.25,
+                                 value = 0.05),
+                     width = 4
+                     
+                   ),
+                   
+                   box(
+                     radioGroupButtons("type_go", label = h3("DEG type:"), 
+                                       choices = list(
+                                         "Over expressed DEG only" = "over", 
+                                         "Under expressed DEG only" = "under", 
+                                         "Both" = "both"), 
+                                       selected = NULL),
+                     width = 3
+                   ),
+                   
+                   
+                   box(
+                     actionButton(
+                       "Run_Annotation_go",
+                       icon = icon("seedling"),
+                       strong("Run Go Term Enrichment")),
+                     width = 12
+                   )
+               ),
+               
+               conditionalPanel(
+                 
+                 condition = "input.method_go == 2",
+                 
+                 box (
+                   title = "GSEA",
+                   shinycustomloader::withLoader(dataTableOutput("Table_go_GSEA"), type = "image", loader = "wait.gif"),
+                   width = 12) ,
+                 
+                 
+                 box(title = "Dot Plot GSEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "dotplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_dotplot", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "dotplot_gsea_go")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 ################"
+                 
+                 box(title = "ridge Plot GSEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "ridgeplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_ridgeplot", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "ridgeplot_go")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 
+                 ###################
+                 
+                 box(title = "gsea Plot", solidHeader = T, status = "success", width = 12, collapsible = T,id = "gsea_plot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_gseaplot", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "gsea_plot_go")
+                              )
+                       )
+                     )
+                 ),
+                 
+               ),
+               
+               conditionalPanel(
+                 condition = "input.method_go == 1",
+                 
+                 box (
+                   title = "ORA",
+                   shinycustomloader::withLoader(dataTableOutput("Table_go_ORA"), type = "image", loader = "wait.gif"),
+                   width = 12) ,
+                 
+                 box(title = "Bar Plot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "barplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_barplot_sea", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "barplot_ora_go")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 
+                 box(title = "Dot Plot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "dotplot_sea",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_dotplot_sea", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "dotplot_sea_go")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 box(title = "Goplot SEA", solidHeader = T, status = "success", width = 12, collapsible = T,id = "goplot",
+                     fluidRow(
+                       column(3,
+                              wellPanel(
+                                numericInput("showCategory_goplot_sea", "number of categories to show", value = 5)
+                              )
+                       )
+                       ,
+                       column(9,
+                              wellPanel(
+                                plotOutput(outputId = "goplot_sea")
+                              )
+                       )
+                     )
+                 ),
+                 
+                 
+               ), 
+      ),  # tabPanel("GO Term Enrichment"     
+      
       
       # BODY: tabPanel : Pathway Enrichment -------------------------------- 
       
@@ -299,49 +504,108 @@ shinyUI(dashboardPage(
                  solidHeader = TRUE, 
                  collapsible = TRUE,
                  
+                 br(),
+                 
                  box(
-                   radioGroupButtons("method", label = h3("Analysis method"),
+                   radioButtons("method", 
+                                label = h4(
+                                  "Analysis method",
+                                  tipify(actionBttn(
+                                    inputId = "tata",
+                                    icon = icon("question"),
+                                    style = "jelly",
+                                    size = "xs",
+                                    block = FALSE,
+                                    no_outline = TRUE
+                                  ), "ORA : hypergeom test with BH adjustment", placement="bottom", trigger = "hover") 
+                                ),
                                      choices = list(
                                        "Over epresentation analysis (ORA)" = 1, 
                                        "Gene Set Enrichment Analysis (GSEA)" = 2), 
-                                     direction = "vertical"),
-                   width = 4
-                 ),
-                 
-                 box(
-                   
-                   radioGroupButtons("db", label = h3("DataBase"),
-                                     choices = list(
-                                       "KEGG" = 1, 
-                                       "REACTOME" = 2), 
-                                     direction = "vertical"),
+                                selected = 1),
                    width = 5
                  ),
                  
-                 box(
-                   radioGroupButtons("type", label = h3("DEG type:"), 
-                                     choices = list(
-                                       "Over expressed DEG only" = 1, 
-                                       "Under expressed DEG only" = 2, 
-                                       "Both" = 3), 
-                                     direction = "vertical"),
-                   width = 3
+                 
+                 conditionalPanel(
+                   condition = "input.method == 1", 
+                   box(
+                     radioButtons("type", 
+                                  label = h4("DEG type",
+                                             tipify(actionBttn(
+                                               inputId = "tutu",
+                                               icon = icon("question"),
+                                               style = "jelly",
+                                               size = "xs",
+                                               block = FALSE,
+                                               no_outline = TRUE
+                                             ), "Diffrential Expression Group", placement="bottom", trigger = "hover") 
+                                  ), 
+                                       choices = list(
+                                         "Over expressed DEG only" = 1, 
+                                         "Under expressed DEG only" = 2, 
+                                         "Both" = 3), 
+                                  selected = NULL),
+                     width = 4
+                   )),
+                 
+                 conditionalPanel(
+                   condition = "input.method == 2",
+                   box(
+                     # img(src="wait.gif"),
+                     width = 4
+                   )
                  ),
                  
                  box(
                    
+                   radioButtons("db", 
+                                label = h4(
+                                  "Database",
+                                  tipify(actionBttn(
+                                    inputId = "toto",
+                                    icon = icon("question"),
+                                    style = "jelly",
+                                    size = "xs",
+                                    block = FALSE,
+                                    no_outline = TRUE
+                                  ), "Choose to annotate your genes with KEGG or REACTOME database", placement="bottom", trigger = "hover")) ,
+                                
+                                choices = list(
+                                  "KEGG" = 1, 
+                                  "REACTOME" = 2), 
+                                selected = 1),
+                   width = 3
+                 ),
+
+                 box (
                    sliderInput(inputId = "pvalue_gsea",
-                               label = "pvalue cutoff for enrichment analysis",
+                               label = h4(
+                                 "Adjusted p-value cutoff",
+                                 tipify(actionBttn(
+                                   inputId = "prt3",
+                                   icon = icon("question"),
+                                   style = "jelly",
+                                   size = "xs",
+                                   block = FALSE,
+                                   no_outline = TRUE
+                                 ), "Thresholding for subsequent analysis (ORA or GSEA)", placement="bottom", trigger = "hover") 
+                               ),
                                min = 0,
-                               max = 0.25,
+                               max = 1,
                                value = 0.05),
-                   width = 7
+                   width = 6
                  ),
                  
-                 
-                 box(
+                 box (
                    selectInput( inputId = "kegg_adj_method",
-                                label = h4("Adjustment method:"),
+                                label = h4("Adjustment method: ",
+                                           tipify(actionButton(
+                                             inputId='pval_adj_help', label="Learn More",                           
+                                             icon = icon("question"),   
+                                             onclick ="window.open('https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust', '_blank')"), 
+                                             "Thresholding for subsequent analysis (ORA or GSEA)", placement="bottom", trigger = "hover") 
+                                ),
                                 choices = list(
                                   'Holm (1979) ("holm")' = "holm", 
                                   'Hochberg (1988) ("hochberg")' = "hochberg", 
@@ -351,37 +615,40 @@ shinyUI(dashboardPage(
                                   'Benjamini & Yekutieli (2001) ("BY")' = "BY",
                                   'none' = "none"
                                 ),
-                                selected = 'none'),
-                   width = 3
+                                selected = NULL
                    ),
-                   
-                   box(
-                     actionButton("Run_Annotation_ENSEMBL_to_GO","Run"),
-                     width = 2
-                   )
-                   
+                   width = 6
+                 ),
+                 
+                 
+                 box (
+                   actionButton(
+                     "Run_Pathway",
+                     icon = icon("seedling"),
+                     strong("Run Pathway Enrichment")),
+                   width = 12)
                    
                  ),
                  
-                 box (title = "Gene annotation with KEGG",
+                 box (title = "Gene annotation with KEGG", collapsible = T,
                       shinycustomloader::withLoader(dataTableOutput("enrichKEGG_table"), type = "image", loader = "wait.gif"), 
                       width = 12, style = "overflow-x: scroll;"),
                  
-                 box(tstatus = "warning", solidHeader = TRUE, width = 12, height = "550px",
+                 box(tstatus = "success", solidHeader = TRUE, collapsible = T, width = 12, height = "550px",
                      shinycustomloader::withLoader(plotlyOutput("dotplot_kegg", height = "450px"), type = "image", loader = "wait.gif")
                  ),
 
                
                  conditionalPanel(
                    condition = "input.method == 1",
-                   box(status = "warning", solidHeader = TRUE, width = 12, height = "550px",
+                   box(status = "success", solidHeader = TRUE, collapsible = T, width = 12, height = "550px",
                        shinycustomloader::withLoader(plotlyOutput("barplot_kegg", height = "450px"), type = "image", loader = "wait.gif"))
                  ),
                  
 
                  conditionalPanel(
                    condition = "input.db == 1",
-                   box(title = "Pathview network", status = "warning", solidHeader = TRUE, width = 12, height = "800px", selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), 
+                   box(title = "Pathview network", status = "success", solidHeader = TRUE,collapsible = T,  width = 12, height = "800px", selectInput("paths", label = h4("Choose a pathway"),choices = "",selected = NULL), 
                        checkboxInput("download_pathview", label = "Download", value = FALSE), actionButton("go", "Analyse pathway"), 
                    shinycustomloader::withLoader(imageOutput('pathview_kegg'), type = "image", loader = "wait.gif"))
                    ),
@@ -389,13 +656,13 @@ shinyUI(dashboardPage(
 
                  conditionalPanel(
                    condition = "input.db == 2",
-                   box(title = "Reactome network", status = "warning", solidHeader = TRUE, width = 12, height = "550px",selectInput("paths_reactome", label = h4("Choose a pathway"),choices = "",selected = NULL), actionButton("goreactome", "Analyse pathway"), 
+                   box(title = "Reactome network", status = "success", solidHeader = TRUE, collapsible = T, width = 12, height = "550px",selectInput("paths_reactome", label = h4("Choose a pathway"),choices = "",selected = NULL), actionButton("goreactome", "Analyse pathway"), 
                        shinycustomloader::withLoader(plotlyOutput("reactome_plot", height = "450px"), type = "image", loader = "wait.gif"))
                  ),
                
                conditionalPanel(
                  condition = "input.method == 2",
-                 box(title = "GSEA plot",status = "warning", solidHeader = TRUE, width = 12, height = "550px",
+                 box(title = "GSEA plot", status = "success", solidHeader = TRUE, collapsible = T, width = 12, height = "550px",
                      shinycustomloader::withLoader(plotlyOutput("gsea_kegg", height = "450px"), type = "image", loader = "wait.gif"))
                )
                
@@ -689,9 +956,10 @@ shinyUI(dashboardPage(
                
                box (
                  title = strong("Summary of the ORA result for KEGG and Protein Domains - BarPlot"), 
-                 shinycustomloader::withLoader(plotlyOutput("bar_plot_summary", height = "8000px"), type = "image", loader = "wait.gif"),
-                 width = 6)
-               
+
+
+                 shinycustomloader::withLoader(plotlyOutput("bar_plot_summary", height='800px'), type = "image", loader = "wait.gif"),
+                 width = 12)
                )
       
 

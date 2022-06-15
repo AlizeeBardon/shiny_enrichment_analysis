@@ -31,6 +31,12 @@ library(shinyalert)
 library(ReactomePA)
 library(ggrepel)
 library(wordcloud)
+library(enrichplot)
+library(shinycssloaders)
+library(ggridges)
+library(plotly)
+library(highcharter)
+library(DT)
 
 # Define server 
 shinyServer(function(input, output, session) {
@@ -58,9 +64,9 @@ re <- reactive({
       validate(need(ext == "csv", "Invalid file. Please upload a .csv file"))
       data <- read.csv(file$datapath, header = TRUE, sep = ";") 
       data <- na.omit(data)
-      required_columns <- c("GeneName", "ID", "baseMean", "log2FC", "pval", "padj")
+      required_columns <- c("ID", "baseMean", "log2FC", "pval", "padj")
       column_names <- colnames(data)
-      min_columns <- 6
+      min_columns <- 5
       shiny::validate(
         need(ncol(data) >= min_columns, "Your data has not enought columns. Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj"),
         need(all(required_columns %in% column_names), "You don't have the right data.  Your data must contain : GeneName, ID, baseMean, log2FC, pval, padj")
@@ -174,7 +180,6 @@ table_DEG_data <- reactive({
         # updating the name of the saved plot 
         config(plotly_object,
                toImageButtonOptions= list(filename = paste0("VolcanoPlot_pvalue_", pvalue, "_log2FC_", tresholdlog2foldchange)))
-
       })
 
 ### MA plot    
@@ -268,22 +273,163 @@ table_DEG_data <- reactive({
         selectRows(row_clicked)
     }) # fin observe
     
-    
     # -------------------------------------------------------------------
     # BODY: tabPanel :GO Term Enrichment --------------------------------
     # -------------------------------------------------------------------
-         
+    
     
     ####################################################
     ### GSEA pour GO
     #####################################################
     
-
+    goGse_annot <-  eventReactive(input$Run_Annotation_go, if(input$method_go == 2){
+      #goGse_annot<- eventReactive(input$Run_Annotation_go,{
+      espece_id <- espece_id()
+      orga_translate_table <- orga_translate_table()
+      # reading in data
+      go <- re()
+      # we want the log2 fold change
+      original_gene_list <- go$log2FC
+      # name the vector
+      names(original_gene_list) <- go$ID
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list <- sort(gene_list, decreasing=TRUE)
+      #gsea_go_data <- go_data()
+      
+      gse <- gseGO(geneList=gene_list, 
+                   ont = input$Ontology, 
+                   keyType = 'ENSEMBL', 
+                   pvalueCutoff = input$pvalue_go, 
+                   minGSSize = 3, 
+                   maxGSSize = 800, 
+                   verbose = TRUE, 
+                   OrgDb = orga_translate_table[espece_id,2], 
+                   pAdjustMethod = "none")
+      
+    })
+    
+    output$Table_go_GSEA <- DT::renderDataTable(DT::datatable({
+      data <- as.data.frame( goGse_annot() )%>%
+        mutate(GO_term = paste0("<a href='https://www.ebi.ac.uk/QuickGO/term/", ID,"' target='_blank'>", ID,"</a>"))
+      col_a_afficher = c('GO_term','setSize', 'enrichmentScore', 'NES', 'pvalue', 'p.adjust', 'rank')
+      #updateSelectInput(session,"paths", choices = data$Description)
+      data[col_a_afficher]
+    },
+    escape = FALSE))
+    
+    
+    output$dotplot_gsea_go <-renderPlot({
+      gse<-goGse_annot()
+      require(DOSE)
+      dotplot(gse, showCategory = input$showCategory_dotplot, title = "gsea dotplot" , split=".sign") + facet_grid(.~.sign)
+    })
+    
+    output$ridgeplot_go<-renderPlot({
+      gse<-goGse_annot()
+      require(DOSE)
+      ridgeplot(gse, showCategory =input$showCategory_ridgeplot)
+    })
+    
+    output$gsea_plot_go <-renderPlot({
+      gse<-goGse_annot()
+      require(DOSE)
+      gseaplot2(gse, geneSetID = input$showCategory_gseaplot)
+    })
     
     ####################################################
     ### ORA pour GO
     #####################################################
-
+    
+    goGse_enrich <-  eventReactive(input$Run_Annotation_go, if(input$method_go == 1){
+      #goGse_enrich<- eventReactive(input$Run_Annotation_go,{
+      espece_id <- espece_id()
+      orga_translate_table <- orga_translate_table()
+      # reading in data
+      go <- re()
+      
+      # we want the log2 fold change 
+      original_gene_list <- go$log2FC
+      
+      # name the vector
+      names(original_gene_list) <- go$ID
+      
+      # omit any NA values 
+      gene_list<-na.omit(original_gene_list)
+      
+      # sort the list in decreasing order (required for clusterProfiler)
+      gene_list = sort(gene_list, decreasing = TRUE)
+      
+      # Exctract significant results (padj < 0.05)
+      sig_genes_df = subset(go, padj < input$pvalue_go)
+      
+      # From significant results, we want to filter on log2fold change
+      genes <- sig_genes_df$log2FC
+      
+      # Name the vector
+      names(genes) <- sig_genes_df$ID
+      
+      # omit NA values
+      genes <- na.omit(genes)
+      #genes <- names(genes)
+      
+      # filter on min log2fold change
+      
+      tresholdLog2FoldChange <- tresholdLog2FoldChange()
+      
+      if (input$type_go == "over"){
+        genes <- names(genes)[genes > tresholdLog2FoldChange]
+      }
+      else if(input$type_go == "under") {
+        genes <- names(genes)[genes < -tresholdLog2FoldChange]
+      }
+      else if(input$type_go == "both") {
+        genes <- names(genes)[abs(genes) > tresholdLog2FoldChange]
+      }
+      go_enrich <- enrichGO(gene = genes,
+                            universe = names(gene_list),
+                            OrgDb = orga_translate_table[espece_id,2], 
+                            keyType = 'ENSEMBL',
+                            readable = T,
+                            ont = input$Ontology,
+                            pvalueCutoff = input$pvalue_go, 
+                            #qvalueCutoff = 0.10
+      )
+    })
+    
+    output$Table_go_ORA <- DT::renderDataTable(DT::datatable({
+      data <- as.data.frame( goGse_enrich() )%>%
+        mutate(GO_term = paste0("<a href='https://www.ebi.ac.uk/QuickGO/term/", ID,"' target='_blank'>", ID,"</a>"))
+      col_a_afficher = c('GO_term','GeneRatio', 'BgRatio', 'p.adjust', 'Count')
+      updateSelectInput(session,"paths", choices = data$Description)
+      data[col_a_afficher]
+    },
+    escape = FALSE))
+    
+    output$barplot_ora_go <-renderPlot({
+      gse<-goGse_enrich()
+      barplot(gse, 
+              drop = TRUE, 
+              showCategory = input$showCategory_barplot_sea, 
+              title = "Barplot for SEA",
+              font.size = 8)
+    })
+    
+    output$dotplot_sea_go <-renderPlot({
+      gse<-goGse_enrich()
+      dotplot(gse, showCategory = input$showCategory_dotplot_sea)+ ggtitle("Dotpot for SEA")
+    })
+    
+    
+    output$goplot_sea <-renderPlot({
+      gse<-goGse_enrich()
+      goplot(gse, 
+             #drop = TRUE, 
+             showCategory = input$showCategory_goplot_sea, #nombre de pathway Ã  afficher
+             font.size = 8,
+             split=".sign")
+    })
     
     # -------------------------------------------------------------------
     # BODY: tabPanel :KEGG --------------------------------
@@ -291,24 +437,21 @@ table_DEG_data <- reactive({
 
     # Annotation Table
     
-    kegg_data <- eventReactive(input$Run_Annotation_ENSEMBL_to_GO, {
+    kegg_data <- eventReactive(input$Run_Pathway, {
       data <- re()
       espece_id <- espece_id()
       orga_translate_table <- orga_translate_table()
-      # organism = espece()
       adj_method <- input$kegg_adj_method
-      ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=orga_translate_table[espece_id,2])
+      #Translate input ENSEMBL IDs to ENTREZID
+      ids = bitr(data$ID, fromType = "ENSEMBL", toType = "ENTREZID", 
+                 OrgDb=orga_translate_table[espece_id,2])
+      #Remove duplicated IDs
       dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
-      
       df2 = data[data$ID %in% dedup_ids$ENSEMBL,]
-      
       # Create a new column in df2 with the corresponding ENTREZ IDs
       df2$Y = dedup_ids$ENTREZID
-      
-      # Create a vector of the gene unuiverse
+      # Create a vector of whole gene log2FC named with ENTREZ IDs
       kegg_gene_list <- df2$log2FC
-
-      # Name vector with ENTREZ ids
       names(kegg_gene_list) <- df2$Y
       # omit any NA values 
       kegg_gene_list<-na.omit(kegg_gene_list)
@@ -351,27 +494,24 @@ table_DEG_data <- reactive({
      
     
     ora_kegg <- function(df2, kegg_gene_list, adj_method, orga_translate_table) {
-        # Exctract significant results from df2
-        kegg_sig_genes_df = subset(df2, padj < 0.05)
+        # Exctract significant results from previous pvalue adjusted threshold
+        kegg_sig_genes_df = subset(df2, padj < input$pvalue)
   
         # From significant results, we want to filter on log2fold change
-  
         kegg_genes <- kegg_sig_genes_df$log2FC
-  
+        # kegg_genes <- kegg_sig_genes_df$log2FC
         # Name the vector with the CONVERTED ID!
         names(kegg_genes) <- kegg_sig_genes_df$Y
-  
-        # omit NA values
         kegg_genes <- na.omit(kegg_genes)
         # filter on log2fold change (under or over expressed DEG)
         if (input$type == 1){
-          kegg_genes <- names(kegg_genes)[kegg_genes > 0]
+          kegg_genes <- names(kegg_genes)[kegg_genes > input$tresholdLog2FoldChange]
         }
         else if(input$type == 2) {
-          kegg_genes <- names(kegg_genes)[kegg_genes < 0]
+          kegg_genes <- names(kegg_genes)[kegg_genes < - input$tresholdLog2FoldChange]
         }
         else {
-          kegg_genes <- names(kegg_genes)
+          kegg_genes <- names(kegg_genes)[kegg_genes < - input$tresholdLog2FoldChange || kegg_genes > input$tresholdLog2FoldChange]
         }
         #Database to use for annotation
         if (input$db == 1){
@@ -383,14 +523,24 @@ table_DEG_data <- reactive({
          return(ora_result)
         }
     
-    output$enrichKEGG_table <- renderDataTable({
+    output$enrichKEGG_table <- DT::renderDataTable(DT::datatable({
       kegg_data <- kegg_data()
       data <- kegg_data$res
-      updateSelectInput(session, "paths", choices = data$Description)
-      updateSelectInput(session, "paths_reactome", choices = data$Description)
-      data.df <- as.data.frame(data)
-      DT::datatable(data.df)
-    })#fin renderDataTable
+      if (input$db ==1){
+        updateSelectInput(session, "paths", choices = data$Description)
+        data.df <- as.data.frame(data) %>% mutate(kegg_link = paste0("<a href='https://www.genome.jp/pathway/", ID,"' target='_blank'>", ID,"</a>"))
+      }
+      else {
+        updateSelectInput(session, "paths_reactome", choices = data$Description)
+        data.df <- as.data.frame(data) %>% mutate(kegg_link = paste0("<a href='https://reactome.org/content/detail/", ID,"' target='_blank'>", ID,"</a>"))
+      }
+      # updateSelectInput(session, "paths", choices = data$Description)
+      # updateSelectInput(session, "paths_reactome", choices = data$Description)
+      # data.df <- as.data.frame(data) %>% mutate(kegg_link = paste0("<a href='https://reactome.org/content/detail/", ID,"' target='_blank'>", ID,"</a>"))
+      data.df$ID = data.df$kegg_link 
+      data.df$kegg_link <- NULL
+      data.df
+    },escape = FALSE))#fin renderDataTable
     
      output$dotplot_kegg <- renderPlotly({
        kegg_data <- kegg_data()
@@ -557,7 +707,6 @@ table_DEG_data <- reactive({
        comptage_Domains <- comptage_Domains()
        #background
        GeneRef = unique(na.omit(interpro_id[c('interpro','ensembl_gene_id')]))
-       summary(GeneRef)
        
        #liste d'interet
        GeneList <- DEG()
@@ -599,7 +748,6 @@ table_DEG_data <- reactive({
                      m = m, 
                      n = n))
        }
-       
        
        #  II -  hypergeometric test                        
        
@@ -822,16 +970,14 @@ table_DEG_data <- reactive({
      ##########################################################################
      
      summary_test <-  eventReactive(input$Run_Summary, {
-       #browser()
        col_select = c('ID','Description', 'BgRatio', 'GeneRatio', 'p.adjust')
        data_domain <- as.data.frame( domain_enrichment_ORA_enricher() )[col_select]
-       data_domain['BD'] = 'Protein Domains'
-       head(data_domain)
+       data_domain['Terms'] = 'Protein Domains'
        data_kegg <- as.data.frame(kegg_data()$res)[col_select]
-       data_kegg['BD'] = 'KEGG'
-       head(data_kegg)
-       data_domain
-       data_summary = rbind(data_domain, data_kegg)
+       data_kegg['Terms'] = 'KEGG'
+       data_go <- as.data.frame(goGse_enrich())[col_select]
+       data_go['Terms'] = 'GO'
+       data_summary = rbind(data_domain, data_kegg, data_go)
      })
      
      output$Table_summary <- renderDataTable({ 
@@ -839,21 +985,16 @@ table_DEG_data <- reactive({
        DT::datatable(D) 
      }) # fin renderDataTable({
      
-     
-     
      output$bar_plot_summary <- renderPlotly( {
        summary_test <- summary_test()
-
        ggplot(data = summary_test, aes(x= p.adjust , y = ID ) ) +
-         geom_bar(stat = "identity", aes(fill = color))  +
+         geom_bar(stat = "identity", aes(fill = Terms))  +
          theme(axis.text.x = element_text(
            angle = 90,
            hjust = 1,
            vjust = 0.5
          )) +
          labs(y = "ID", x = "Pvalue adjusted")
-       
-       #browser()
      })
      
 
