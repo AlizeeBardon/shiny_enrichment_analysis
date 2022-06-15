@@ -458,6 +458,8 @@ table_DEG_data <- reactive({
       # sort the list in decreasing order (required for clusterProfiler)
       kegg_gene_list = sort(kegg_gene_list, decreasing = TRUE)
       #Method to use for gene set analysis
+      
+      
       if(input$method == 2){
         res <- gse_kegg(kegg_gene_list, adj_method, orga_translate_table[espece_id,])
       }
@@ -504,6 +506,8 @@ table_DEG_data <- reactive({
         names(kegg_genes) <- kegg_sig_genes_df$Y
         kegg_genes <- na.omit(kegg_genes)
         # filter on log2fold change (under or over expressed DEG)
+        
+        
         if (input$type == 1){
           kegg_genes <- names(kegg_genes)[kegg_genes > input$tresholdLog2FoldChange]
         }

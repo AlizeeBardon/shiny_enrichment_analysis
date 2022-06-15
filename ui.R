@@ -349,7 +349,9 @@ shinyUI(dashboardPage(
                                          "Over expressed DEG only" = "over", 
                                          "Under expressed DEG only" = "under", 
                                          "Both" = "both"), 
+
                                        selected = NULL),
+
                      width = 3
                    ),
                    
@@ -958,8 +960,11 @@ shinyUI(dashboardPage(
                  title = strong("Summary of the ORA result for KEGG and Protein Domains - BarPlot"), 
 
 
+
                  shinycustomloader::withLoader(plotlyOutput("bar_plot_summary", height='800px'), type = "image", loader = "wait.gif"),
                  width = 12)
+               
+
                )
       
 
