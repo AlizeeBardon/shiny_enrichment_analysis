@@ -9,4 +9,4 @@ This interactive Shiny application aims to facilitate and automate the analysis 
 - Master of BioInformatics Modeling and Statistics, Rouen University 
 
 ## How to cite:
-Bardon A, Bottin F, Bencheickh S, Levon S., Vergne N, Dauchel H. DAISY RNAseq : Differential expression Analysis in ShinY for RNA seq. 2022.
+Bardon A, Bottin F, Bencheickh S, Levon S., Vergne N, Dauchel H. DAISY RNAseq : Differential expression Analysis in ShinY for RNA seq. Rouen Normandy university bioinformatics master, France, 2022.
